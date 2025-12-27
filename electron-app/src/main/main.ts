@@ -1,8 +1,10 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { spawn } from 'child_process';
+import { PythonRunner, type CrawlerOptions } from './pythonRunner';
 
 let mainWindow: BrowserWindow | null = null;
+let pythonRunner: PythonRunner | null = null;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -39,9 +41,6 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('load-data', async () => {
     return new Promise((resolve, reject) => {
-        // Path to JAR file
-        // In dev, it's relative to project root. In prod, it might be different.
-        // For now, assume dev environment structure or adjust path.
         const jarPath = path.resolve(__dirname, '../../../java-app/build/libs/football-bet-parser-1.0.0-SNAPSHOT.jar');
         const dataDir = path.resolve(__dirname, '../../../data');
 
@@ -74,4 +73,51 @@ ipcMain.handle('load-data', async () => {
             }
         });
     });
+});
+
+// Python Crawler IPC Handlers
+ipcMain.handle('crawler:start', async (_event, options: Crawler Options) => {
+    if (!pythonRunner) {
+        pythonRunner = new PythonRunner();
+    }
+
+    if (pythonRunner.isRunning()) {
+        throw new Error('Crawler is already running');
+    }
+
+    return new Promise((resolve, reject) => {
+        pythonRunner!.start(
+            options,
+            // onMessage: forward to renderer
+            (message) => {
+                if (mainWindow) {
+                    mainWindow.webContents.send('crawler:message', message);
+                }
+            },
+            // onComplete
+            (exitCode) => {
+                if (exitCode === 0) {
+                    resolve({ success: true });
+                } else {
+                    reject(new Error(`Crawler exited with code ${exitCode}`));
+                }
+            },
+            // onError
+            (error) => {
+                reject(error);
+            }
+        );
+    });
+});
+
+ipcMain.handle('crawler:stop', async () => {
+    if (pythonRunner) {
+        pythonRunner.stop();
+    }
+    return { success: true };
+});
+
+ipcMain.handle('crawler:status', async () => {
+    const isRunning = pythonRunner ? pythonRunner.isRunning() : false;
+    return { isRunning };
 });
