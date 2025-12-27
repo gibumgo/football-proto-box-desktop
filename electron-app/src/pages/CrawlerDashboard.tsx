@@ -1,238 +1,314 @@
-import { useState, useEffect, useRef } from 'react';
-import { COLORS, TYPOGRAPHY } from '../domain/design/theme';
-import { crawlerApi } from '../api/crawlerApi';
-import { CRAWLER_CONFIG } from '../constants/crawlerConstants';
-import { TEXTS } from '../constants/uiTexts';
-
-interface CrawlerConfig {
-    site: 'betinfo' | 'flashscore';
-    startRound: string;
-    endRound: string;
-    headless: boolean;
-    timeout: number;
-}
+import { useState, useEffect, useCallback } from 'react';
+import DataInventoryCard, { DataRow } from '../components/crawler/DataInventoryCard';
+import CrawlerControlPanel from '../components/crawler/CrawlerControlPanel';
+import { COLORS, SPACING, TYPOGRAPHY } from '../constants/designSystem';
+import type { CrawlerMessage, BetinfoOptions, FlashscoreOptions } from '../types/crawler';
 
 export function CrawlerDashboard() {
-    const [config, setConfig] = useState<CrawlerConfig>({
-        site: 'betinfo',
-        startRound: '2025040',
-        endRound: '',
-        headless: CRAWLER_CONFIG.DEFAULT_HEADLESS,
-        timeout: CRAWLER_CONFIG.DEFAULT_TIMEOUT
-    });
-
-    const [status, setStatus] = useState<any>({ status: 'IDLE', progress: 0, lastLog: '' });
+    const [isRunning, setIsRunning] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
-    const [polling, setPolling] = useState(false);
-    const logContainerRef = useRef<HTMLDivElement>(null);
+    const [progress, setProgress] = useState(0);
 
-
+    // Handle IPC messages from Python
     useEffect(() => {
-        const checkStatus = async () => {
-            try {
-                const currentStatus = await crawlerApi.getStatus();
-                setStatus(currentStatus);
-                if (currentStatus.status === 'RUNNING') {
-                    setPolling(true);
-                } else if (currentStatus.status !== 'IDLE') {
-                    setPolling(false);
-                }
+        const unsubscribe = window.api.crawler.onMessage((message: CrawlerMessage) => {
+            switch (message.type) {
+                case 'STATUS':
+                    setLogs(prev => [...prev, `[STATUS] ${message.payload.statusType}: ${message.payload.value}`]);
+                    break;
 
-                if (currentStatus.lastLog && logs[logs.length - 1] !== currentStatus.lastLog) {
-                    setLogs(prev => [...prev, currentStatus.lastLog]);
-                }
-            } catch (e) {
-                console.error("Failed to poll status", e);
+                case 'PROGRESS':
+                    setProgress(message.payload.percent);
+                    break;
+
+                case 'DATA':
+                    setLogs(prev => [...prev, `[DATA] Saved ${Object.keys(message.payload).length} items`]);
+                    break;
+
+                case 'LOG':
+                    setLogs(prev => [...prev, `[${message.payload.level}] ${message.payload.message}`]);
+                    break;
+
+                case 'ERROR':
+                    setLogs(prev => [...prev, `[ERROR ${message.payload.code}] ${message.payload.message}`]);
+                    setIsRunning(false);
+                    break;
+
+                case 'CHECKPOINT':
+                    setLogs(prev => [...prev, `[CHECKPOINT] ${message.payload.checkpointId}`]);
+                    break;
             }
-        };
+        });
 
-        checkStatus();
+        // Check initial status
+        window.api.crawler.status().then(({ isRunning }) => {
+            setIsRunning(isRunning);
+        });
 
-        let interval: any;
-        if (polling) {
-            interval = setInterval(checkStatus, 1000);
-        }
-        return () => clearInterval(interval);
-    }, [polling]);
+        return unsubscribe;
+    }, []);
 
-
-    useEffect(() => {
-        if (logContainerRef.current) {
-            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-        }
-    }, [logs]);
-
-    const handleStart = async () => {
+    const handleStart = useCallback(async (options: BetinfoOptions | FlashscoreOptions) => {
         try {
             setLogs([]);
-            await crawlerApi.start({
-                ...config,
-                mode: config.site
-            });
-            setPolling(true);
-        } catch (e) {
-            alert('Failed to start crawler: ' + e);
-        }
-    };
+            setProgress(0);
 
-    const handleStop = async () => {
+            await window.api.crawler.start(options);
+            setIsRunning(true);
+            setLogs(prev => [...prev, `System: Starting crawler (${options.mode})...`]);
+        } catch (error) {
+            console.error('Failed to start crawler:', error);
+            setLogs(prev => [...prev, `[ERROR] Failed to start: ${error}`]);
+        }
+    }, []);
+
+    const handleStop = useCallback(async () => {
         try {
-            await crawlerApi.stop();
-            setPolling(false);
-        } catch (e) {
-            alert('Failed to stop crawler: ' + e);
+            await window.api.crawler.stop();
+            setIsRunning(false);
+            setLogs(prev => [...prev, 'System: Crawler stopped.']);
+        } catch (error) {
+            console.error('Failed to stop crawler:', error);
+            setLogs(prev => [...prev, `[ERROR] Failed to stop: ${error}`]);
         }
-    };
-
-    const isRunning = status.status === 'RUNNING';
+    }, []);
 
     return (
-        <div style={{ padding: '24px', color: COLORS.TEXT_PRIMARY }}>
-            <h1 style={{ fontSize: TYPOGRAPHY.SIZE.XXL, marginBottom: '24px' }}>{TEXTS.CRAWLER.TITLE}</h1>
-
-            <div style={{ display: 'flex', gap: '24px' }}>
+        <div style={{
+            backgroundColor: COLORS.APP_BG,
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            overflow: 'hidden'
+        }}>
+            {/* Header */}
+            <div style={{
+                backgroundColor: COLORS.HEADER,
+                borderBottom: `1px solid ${COLORS.BORDER}`,
+                padding: `${SPACING.MD} ${SPACING.LG}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexShrink: 0,
+                height: '48px',
+                boxSizing: 'border-box'
+            }}>
+                <h1 style={{
+                    margin: 0,
+                    fontSize: TYPOGRAPHY.FONT_SIZE.LG,
+                    fontWeight: TYPOGRAPHY.FONT_WEIGHT.BOLD,
+                    color: COLORS.TEXT_PRIMARY,
+                    fontFamily: TYPOGRAPHY.FONT_FAMILY.SANS,
+                    letterSpacing: '-0.5px'
+                }}>
+                    Crawler Manager
+                </h1>
                 <div style={{
-                    flex: 1,
-                    backgroundColor: COLORS.SURFACE,
-                    padding: '24px',
-                    borderRadius: '8px',
+                    display: 'flex',
+                    gap: SPACING.SM,
+                    alignItems: 'center',
+                    fontSize: '11px',
+                    backgroundColor: '#000',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
                     border: `1px solid ${COLORS.BORDER}`
                 }}>
-                    <h2 style={{ fontSize: TYPOGRAPHY.SIZE.LG, marginBottom: '16px' }}>{TEXTS.CRAWLER.SECTION_CONFIG}</h2>
-
-                    <div style={{ marginBottom: '16px' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', color: COLORS.TEXT_SECONDARY }}>{TEXTS.CRAWLER.LABEL_SITE}</label>
-                        <select
-                            value={config.site}
-                            onChange={e => setConfig({ ...config, site: e.target.value as any })}
-                            style={{
-                                width: '100%', padding: '8px',
-                                backgroundColor: COLORS.APP_BG, border: `1px solid ${COLORS.BORDER}`, color: COLORS.TEXT_PRIMARY
-                            }}
-                            disabled={isRunning}
-                        >
-                            <option value="betinfo">{TEXTS.CRAWLER.SITE_BETINFO}</option>
-                            <option value="flashscore">{TEXTS.CRAWLER.SITE_FLASHSCORE}</option>
-                        </select>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', marginBottom: '8px', color: COLORS.TEXT_SECONDARY }}>{TEXTS.CRAWLER.LABEL_START_ROUND}</label>
-                            <input
-                                type="text"
-                                value={config.startRound}
-                                onChange={e => setConfig({ ...config, startRound: e.target.value })}
-                                style={{
-                                    width: '100%', padding: '8px',
-                                    backgroundColor: COLORS.APP_BG, border: `1px solid ${COLORS.BORDER}`, color: COLORS.TEXT_PRIMARY
-                                }}
-                                disabled={isRunning}
-                            />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', marginBottom: '8px', color: COLORS.TEXT_SECONDARY }}>{TEXTS.CRAWLER.LABEL_END_ROUND}</label>
-                            <input
-                                type="text"
-                                value={config.endRound}
-                                onChange={e => setConfig({ ...config, endRound: e.target.value })}
-                                style={{
-                                    width: '100%', padding: '8px',
-                                    backgroundColor: COLORS.APP_BG, border: `1px solid ${COLORS.BORDER}`, color: COLORS.TEXT_PRIMARY
-                                }}
-                                disabled={isRunning}
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                            <input
-                                type="checkbox"
-                                checked={config.headless}
-                                onChange={e => setConfig({ ...config, headless: e.target.checked })}
-                                disabled={isRunning}
-                                style={{ marginRight: '8px' }}
-                            />
-                            {TEXTS.CRAWLER.CHECKBOX_HEADLESS}
-                        </label>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        <button
-                            onClick={handleStart}
-                            disabled={isRunning}
-                            style={{
-                                flex: 1, padding: '12px',
-                                backgroundColor: isRunning ? COLORS.SURFACE : COLORS.NEON_BLUE,
-                                color: isRunning ? COLORS.TEXT_SECONDARY : '#000',
-                                border: 'none', borderRadius: '4px', cursor: isRunning ? 'not-allowed' : 'pointer',
-                                fontWeight: 'bold'
-                            }}
-                        >
-                            {TEXTS.CRAWLER.BTN_START}
-                        </button>
-                        <button
-                            onClick={handleStop}
-                            disabled={!isRunning}
-                            style={{
-                                flex: 1, padding: '12px',
-                                backgroundColor: !isRunning ? COLORS.SURFACE : COLORS.NEON_RED,
-                                color: !isRunning ? COLORS.TEXT_SECONDARY : '#fff',
-                                border: 'none', borderRadius: '4px', cursor: !isRunning ? 'not-allowed' : 'pointer',
-                                fontWeight: 'bold'
-                            }}
-                        >
-                            {TEXTS.CRAWLER.BTN_STOP}
-                        </button>
-                    </div>
+                    <div style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: isRunning ? COLORS.NEON_GREEN : COLORS.TEXT_SECONDARY,
+                        boxShadow: isRunning ? `0 0 5px ${COLORS.NEON_GREEN}` : 'none'
+                    }} />
+                    <span style={{ color: COLORS.TEXT_SECONDARY }}>
+                        {isRunning ? 'RUNNING' : 'IDLE'}
+                    </span>
                 </div>
+            </div>
+
+            {/* Main Layout */}
+            <div style={{
+                flex: 1,
+                display: 'flex',
+                overflow: 'hidden'
+            }}>
+                {/* Left Column - Control Panel */}
                 <div style={{
-                    flex: 2,
+                    flex: '0 0 320px',
+                    maxWidth: '360px',
+                    backgroundColor: COLORS.SURFACE,
+                    borderRight: `1px solid ${COLORS.BORDER}`,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '16px'
+                    overflowY: 'auto'
                 }}>
-                    <div style={{
-                        backgroundColor: COLORS.SURFACE,
-                        padding: '16px',
-                        borderRadius: '8px',
-                        border: `1px solid ${COLORS.BORDER}`
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span>{TEXTS.CRAWLER.STATUS_LABEL} <strong style={{ color: isRunning ? COLORS.NEON_BLUE : COLORS.TEXT_PRIMARY }}>{status.status}</strong></span>
-                            <span>{status.progress}%</span>
+                    <div style={{ padding: SPACING.LG, display: 'flex', flexDirection: 'column', gap: SPACING.XL }}>
+
+                        {/* 1. Crawler Execution */}
+                        <Section title="EXECUTION">
+                            <CrawlerControlPanel
+                                onStart={handleStart}
+                                onStop={handleStop}
+                                isRunning={isRunning}
+                            />
+                        </Section>
+
+                        {/* 2. Dashboard Stats (Simplified) */}
+                        <Section title="OVERVIEW">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <SummaryItem label="Last Run" value="Today, 05:30" />
+                                <SummaryItem label="Total Matches" value="1,240" />
+                                <SummaryItem label="Coverage" value="Betinfo (25), Flashscore (8)" />
+                            </div>
+                        </Section>
+
+                        {/* 3. Settings Links */}
+                        <div style={{ marginTop: 'auto', paddingTop: SPACING.LG }}>
+                            <div style={{ fontSize: '11px', color: COLORS.TEXT_SECONDARY, textAlign: 'center' }}>
+                                Football Proto Box v1.0.0
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Right Column - Data & Logs */}
+                <div style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    backgroundColor: '#0d1117' // Darker bg for content area
+                }}>
+                    {/* Top: Data Cards */}
+                    <div style={{
+                        flex: '1',
+                        overflowY: 'auto',
+                        padding: SPACING.LG
+                    }}>
                         <div style={{
-                            width: '100%', height: '8px', backgroundColor: COLORS.APP_BG, borderRadius: '4px', overflow: 'hidden'
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                            gap: SPACING.MD,
+                            marginBottom: SPACING.LG
                         }}>
-                            <div style={{
-                                width: `${status.progress}%`, height: '100%',
-                                backgroundColor: status.status === 'FAILED' ? COLORS.NEON_RED : COLORS.NEON_BLUE,
-                                transition: 'width 0.3s ease'
-                            }} />
+                            <DataInventoryCard title="Betinfo Data">
+                                <DataRow label="Rounds" value="1 ~ 25" status="success" />
+                                <DataRow label="Total" value="25 Files" />
+                            </DataInventoryCard>
+
+                            <DataInventoryCard title="Flashscore Data">
+                                <DataRow label="Leagues" value="8" status="success" />
+                                <DataRow label="Teams" value="160" />
+                            </DataInventoryCard>
+
+                            <DataInventoryCard title="System">
+                                <DataRow label="Python" value="3.9.6" />
+                                <DataRow label="Selenium" value="Ready" status="success" />
+                            </DataInventoryCard>
                         </div>
                     </div>
 
-                    <div ref={logContainerRef} style={{
-                        flex: 1,
-                        backgroundColor: '#000',
-                        borderRadius: '8px',
-                        padding: '16px',
-                        fontFamily: 'monospace',
-                        fontSize: '12px',
-                        overflowY: 'auto',
-                        color: '#4CAF50',
-                        border: `1px solid ${COLORS.BORDER}`,
-                        minHeight: '300px'
+                    {/* Bottom: Progress & Logs */}
+                    <div style={{
+                        flexShrink: 0,
+                        borderTop: `1px solid ${COLORS.BORDER}`,
+                        backgroundColor: COLORS.SURFACE
                     }}>
-                        {logs.length === 0 ? <div style={{ opacity: 0.5 }}>{TEXTS.CRAWLER.LOG_EMPTY}</div> :
-                            logs.map((log, i) => (
-                                <div key={i} style={{ marginBottom: '4px' }}>{log}</div>
-                            ))}
+                        {/* Progress Bar (Conditional) */}
+                        {isRunning && (
+                            <div style={{
+                                height: '4px',
+                                width: '100%',
+                                backgroundColor: COLORS.APP_BG,
+                                overflow: 'hidden'
+                            }}>
+                                <div style={{
+                                    width: `${progress}%`,
+                                    height: '100%',
+                                    backgroundColor: COLORS.NEON_BLUE,
+                                    transition: 'width 0.3s ease'
+                                }} />
+                            </div>
+                        )}
+
+                        {/* Logs Window */}
+                        <div style={{
+                            height: '300px',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
+                            <div style={{
+                                padding: '8px 16px',
+                                borderBottom: `1px solid ${COLORS.BORDER}`,
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                color: COLORS.TEXT_SECONDARY,
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                backgroundColor: COLORS.HEADER
+                            }}>
+                                <span>TERMINAL OUTPUT</span>
+                                <span style={{ fontFamily: TYPOGRAPHY.FONT_FAMILY.MONO }}>{logs.length} lines</span>
+                            </div>
+                            <div style={{
+                                flex: 1,
+                                padding: '12px',
+                                backgroundColor: '#000',
+                                color: '#abb2bf',
+                                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                                fontSize: '12px',
+                                lineHeight: '1.5',
+                                overflowY: 'auto'
+                            }}>
+                                {logs.length === 0 ? (
+                                    <div style={{ opacity: 0.3 }}>Waiting for tasks...</div>
+                                ) : (
+                                    logs.map((log, index) => (
+                                        <div key={index} style={{
+                                            color: log.includes('[ERROR]') ? COLORS.NEON_RED :
+                                                log.includes('[STATUS]') ? COLORS.NEON_CYAN :
+                                                    'inherit',
+                                            paddingLeft: log.startsWith('  ') ? '16px' : '0'
+                                        }}>
+                                            {log}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     );
 }
+
+// Minimal Helpers
+const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <h3 style={{
+            margin: 0,
+            fontSize: '11px',
+            fontWeight: 'bold',
+            color: COLORS.TEXT_SECONDARY,
+            letterSpacing: '1px'
+        }}>
+            {title}
+        </h3>
+        {children}
+    </div>
+);
+
+const SummaryItem = ({ label, value }: { label: string, value: string }) => (
+    <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontSize: '13px',
+        padding: '4px 0',
+        borderBottom: `1px dashed ${COLORS.BORDER}`
+    }}>
+        <span style={{ color: COLORS.TEXT_SECONDARY }}>{label}</span>
+        <span style={{ color: COLORS.TEXT_PRIMARY }}>{value}</span>
+    </div>
+);

@@ -1,6 +1,4 @@
-/// <reference types="vite/client" />
-
-import type { CrawlerMessage, BetinfoOptions, FlashscoreOptions } from './types/crawler';
+import type { CrawlerMessage, BetinfoOptions, FlashscoreOptions } from './crawler';
 
 declare global {
     interface Window {
@@ -15,3 +13,5 @@ declare global {
         };
     }
 }
+
+export { };

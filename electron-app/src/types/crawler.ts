@@ -1,28 +1,39 @@
-// Crawler Types
-export interface CrawlerMessage {
-    type: 'STATUS' | 'PROGRESS' | 'DATA' | 'CHECKPOINT' | 'ERROR' | 'LOG';
-    payload: any;
+// Crawler Types matching Python CLI arguments
+
+export interface CommonOptions {
+    headless?: boolean;
+    debug?: boolean;
+    timeout?: number;
+    outputDir?: string;
 }
 
-export interface BetinfoOptions {
+export interface BetinfoOptions extends CommonOptions {
     mode: 'betinfo';
-    recent?: number;
-    startRound?: number;
-    endRound?: number;
-    rounds?: number[];
+    collectionType: 'recent' | 'range' | 'rounds'; // UI helper state
     year?: number;
+    recent?: number;
+    startRound?: string; // Changed to string to match CLI
+    endRound?: string;   // Changed to string to match CLI
+    rounds?: string;     // Comma separated string
 }
 
-export interface FlashscoreOptions {
+export interface FlashscoreOptions extends CommonOptions {
     mode: 'flashscore';
     task: 'metadata' | 'matches';
+    url: string;         // Required for metadata and matches
     season?: string;
     fsStartRound?: number;
     fsEndRound?: number;
+    checkpointInterval?: number;
     resume?: boolean;
 }
 
 export type CrawlerOptions = BetinfoOptions | FlashscoreOptions;
+
+export interface CrawlerMessage {
+    type: 'STATUS' | 'PROGRESS' | 'DATA' | 'CHECKPOINT' | 'ERROR' | 'LOG';
+    payload: any;
+}
 
 // Data Inventory Types
 export interface DataInventory {

@@ -1,7 +1,8 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { spawn } from 'child_process';
-import { PythonRunner, type CrawlerOptions } from './pythonRunner';
+import { PythonRunner } from './pythonRunner';
+import type { CrawlerOptions } from '../types/crawler';
 
 let mainWindow: BrowserWindow | null = null;
 let pythonRunner: PythonRunner | null = null;
@@ -76,7 +77,7 @@ ipcMain.handle('load-data', async () => {
 });
 
 // Python Crawler IPC Handlers
-ipcMain.handle('crawler:start', async (_event, options: Crawler Options) => {
+ipcMain.handle('crawler:start', async (_event, options: CrawlerOptions) => {
     if (!pythonRunner) {
         pythonRunner = new PythonRunner();
     }

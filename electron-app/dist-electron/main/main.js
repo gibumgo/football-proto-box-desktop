@@ -6,7 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const child_process_1 = require("child_process");
+const pythonRunner_1 = require("./pythonRunner");
 let mainWindow = null;
+let pythonRunner = null;
 function createWindow() {
     mainWindow = new electron_1.BrowserWindow({
         width: 1600,
@@ -40,9 +42,6 @@ electron_1.app.on('window-all-closed', () => {
 });
 electron_1.ipcMain.handle('load-data', async () => {
     return new Promise((resolve, reject) => {
-        // Path to JAR file
-        // In dev, it's relative to project root. In prod, it might be different.
-        // For now, assume dev environment structure or adjust path.
         const jarPath = path_1.default.resolve(__dirname, '../../../java-app/build/libs/football-bet-parser-1.0.0-SNAPSHOT.jar');
         const dataDir = path_1.default.resolve(__dirname, '../../../data');
         console.log('Spawning Java process:', jarPath, dataDir);
@@ -71,4 +70,45 @@ electron_1.ipcMain.handle('load-data', async () => {
             }
         });
     });
+});
+// Python Crawler IPC Handlers
+electron_1.ipcMain.handle('crawler:start', async (_event, options) => {
+    if (!pythonRunner) {
+        pythonRunner = new pythonRunner_1.PythonRunner();
+    }
+    if (pythonRunner.isRunning()) {
+        throw new Error('Crawler is already running');
+    }
+    return new Promise((resolve, reject) => {
+        pythonRunner.start(options, 
+        // onMessage: forward to renderer
+        (message) => {
+            if (mainWindow) {
+                mainWindow.webContents.send('crawler:message', message);
+            }
+        }, 
+        // onComplete
+        (exitCode) => {
+            if (exitCode === 0) {
+                resolve({ success: true });
+            }
+            else {
+                reject(new Error(`Crawler exited with code ${exitCode}`));
+            }
+        }, 
+        // onError
+        (error) => {
+            reject(error);
+        });
+    });
+});
+electron_1.ipcMain.handle('crawler:stop', async () => {
+    if (pythonRunner) {
+        pythonRunner.stop();
+    }
+    return { success: true };
+});
+electron_1.ipcMain.handle('crawler:status', async () => {
+    const isRunning = pythonRunner ? pythonRunner.isRunning() : false;
+    return { isRunning };
 });
