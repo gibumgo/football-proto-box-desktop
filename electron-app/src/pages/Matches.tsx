@@ -1,5 +1,5 @@
 import { COLORS, TYPOGRAPHY } from '../domain/design/theme';
-import { MATCH_COLUMNS, TEXTS } from '../constants';
+import { TEXTS } from '../constants/uiTexts';
 import { Match } from '../domain/models/match/Match';
 
 export interface MatchesProps {
@@ -39,7 +39,7 @@ export function Matches({ data, loading, onReload, onTeamSelect, signalMode }: M
                     fontWeight: TYPOGRAPHY.WEIGHT.BOLD,
                     color: COLORS.TEXT_PRIMARY
                 }}>
-                    {TEXTS.MATCHES_TITLE}
+                    {TEXTS.MATCHES.TITLE}
                 </h2>
                 <button
                     onClick={onReload}
@@ -56,7 +56,7 @@ export function Matches({ data, loading, onReload, onTeamSelect, signalMode }: M
                         opacity: loading ? 0.6 : 1,
                     }}
                 >
-                    {loading ? TEXTS.LOADING : TEXTS.RELOAD_DATA}
+                    {loading ? TEXTS.MATCHES.LOADING : TEXTS.MATCHES.RELOAD}
                 </button>
             </div>
 
@@ -73,18 +73,18 @@ export function Matches({ data, loading, onReload, onTeamSelect, signalMode }: M
                 }}>
                     <thead>
                         <tr style={{ backgroundColor: COLORS.HEADER }}>
-                            <th style={headerStyle}>{MATCH_COLUMNS.ROUND}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.MATCH_NO}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.DATE_TIME}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.LEAGUE}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.HOME}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.SCORE}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.AWAY}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.WIN_ODD}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.DRAW_ODD}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.LOSE_ODD}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.RESULT}</th>
-                            <th style={headerStyle}>{MATCH_COLUMNS.RESULT_ODD}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.ROUND}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.MATCH_NO}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.DATE}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.LEAGUE}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.HOME}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.SCORE}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.AWAY}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.WIN}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.DRAW}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.LOSE}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.RESULT}</th>
+                            <th style={headerStyle}>{TEXTS.MATCHES.COLUMNS.ODD}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -95,7 +95,7 @@ export function Matches({ data, loading, onReload, onTeamSelect, signalMode }: M
                                     textAlign: 'center',
                                     color: COLORS.TEXT_SECONDARY
                                 }}>
-                                    경기 데이터가 없습니다
+                                    {TEXTS.MATCHES.NO_DATA}
                                 </td>
                             </tr>
                         ) : (

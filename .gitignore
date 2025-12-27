@@ -91,3 +91,6 @@ data/*
 !data/.gitkeep
 !data/sample.json
 *.csv
+
+# Python Crawler
+python-crawler/

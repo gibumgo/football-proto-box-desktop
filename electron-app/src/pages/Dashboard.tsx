@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Match } from '../domain/models/match/Match';
 import { COLORS, TYPOGRAPHY } from '../domain/design/theme';
+import { TEXTS } from '../constants/uiTexts';
 import { SPACING, BORDER_RADIUS } from '../domain/design/tokens';
 
 interface DashboardProps {
@@ -69,25 +70,25 @@ export function Dashboard({ data }: DashboardProps) {
                 marginBottom: SPACING.XL,
                 color: COLORS.TEXT_PRIMARY
             }}>
-                📊 Dashboard
+                {TEXTS.DASHBOARD.TITLE}
             </h2>
 
             {/* Summary Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: SPACING.LG, marginBottom: SPACING.XXL }}>
                 <div style={cardStyle}>
-                    <h3 style={cardTitleStyle}>전체 경기</h3>
+                    <h3 style={cardTitleStyle}>{TEXTS.DASHBOARD.CARD_TOTAL}</h3>
                     <p style={valueStyle}>{summary.total}</p>
                 </div>
                 <div style={cardStyle}>
-                    <h3 style={cardTitleStyle}>승률</h3>
+                    <h3 style={cardTitleStyle}>{TEXTS.DASHBOARD.CARD_WIN_RATE}</h3>
                     <p style={{ ...valueStyle, color: COLORS.NEON_GREEN }}>{summary.win}%</p>
                 </div>
                 <div style={cardStyle}>
-                    <h3 style={cardTitleStyle}>무승부율</h3>
+                    <h3 style={cardTitleStyle}>{TEXTS.DASHBOARD.CARD_DRAW_RATE}</h3>
                     <p style={{ ...valueStyle, color: COLORS.TEXT_SECONDARY }}>{summary.draw}%</p>
                 </div>
                 <div style={cardStyle}>
-                    <h3 style={cardTitleStyle}>패율</h3>
+                    <h3 style={cardTitleStyle}>{TEXTS.DASHBOARD.CARD_LOSE_RATE}</h3>
                     <p style={{ ...valueStyle, color: COLORS.NEON_RED }}>{summary.lose}%</p>
                 </div>
             </div>
@@ -96,7 +97,7 @@ export function Dashboard({ data }: DashboardProps) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: SPACING.XL, marginBottom: SPACING.XXL }}>
                 {/* League Chart */}
                 <div style={{ ...chartCardStyle }}>
-                    <h3 style={chartTitleStyle}>리그별 분포</h3>
+                    <h3 style={chartTitleStyle}>{TEXTS.DASHBOARD.CHART_LEAGUE_TITLE}</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={leagueData}>
                             <CartesianGrid strokeDasharray="3 3" stroke={COLORS.BORDER} />
@@ -124,7 +125,7 @@ export function Dashboard({ data }: DashboardProps) {
 
                 {/* Result Chart */}
                 <div style={{ ...chartCardStyle }}>
-                    <h3 style={chartTitleStyle}>결과 분포</h3>
+                    <h3 style={chartTitleStyle}>{TEXTS.DASHBOARD.CHART_RESULT_TITLE}</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                             <Pie

@@ -1,5 +1,6 @@
 import { COLORS, TYPOGRAPHY } from '../../domain/design/theme';
 import { LAYOUT } from '../../domain/design/layout';
+import { TEXTS } from '../../constants/uiTexts';
 
 interface SidebarProps {
     currentPage: string;
@@ -8,10 +9,11 @@ interface SidebarProps {
 
 export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     const menuItems = [
-        { id: 'dashboard', label: 'Dashboard' },
-        { id: 'matches', label: 'Analysis' },
-        { id: 'tools', label: 'Tools' },
-        { id: 'settings', label: 'Settings' },
+        { id: 'dashboard', label: TEXTS.LAYOUT.MENU.DASHBOARD },
+        { id: 'matches', label: TEXTS.LAYOUT.MENU.ANALYSIS },
+        { id: 'crawler', label: TEXTS.LAYOUT.MENU.CRAWLER },
+        { id: 'tools', label: TEXTS.LAYOUT.MENU.TOOLS },
+        { id: 'settings', label: TEXTS.LAYOUT.MENU.SETTINGS },
     ];
 
     return (
@@ -35,7 +37,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                 color: COLORS.TEXT_PRIMARY,
                 letterSpacing: '0.05em'
             }}>
-                PROTO BOX
+                {TEXTS.LAYOUT.LOGO}
             </div>
 
             {/* Menu */}
@@ -80,7 +82,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 
             {/* Version Text */}
             <div style={{ padding: '20px', fontSize: TYPOGRAPHY.SIZE.XS, color: COLORS.TEXT_SECONDARY, opacity: 0.5 }}>
-                v0.1.0 Alpha
+                {TEXTS.LAYOUT.VERSION}
             </div>
         </div>
     );
