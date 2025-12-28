@@ -1,5 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { COLORS, TYPOGRAPHY, DENSITY } from '../../constants/designSystem';
+import { NEON_THEME } from '../../domain/design/designTokens';
+
+const DENSITY = {
+    COMPACT: { padding: NEON_THEME.spacing.sm }
+};
 
 interface LogsPanelProps {
     logs: string[];
@@ -18,8 +22,8 @@ const LogsPanel: React.FC<LogsPanelProps> = ({ logs, isCollapsed, onToggle }) =>
 
     return (
         <div style={{
-            backgroundColor: COLORS.SURFACE,
-            borderTop: `1px solid ${COLORS.BORDER}`,
+            backgroundColor: NEON_THEME.colors.bg.surface,
+            borderTop: `1px solid ${NEON_THEME.colors.border.default}`,
             display: 'flex',
             flexDirection: 'column',
             height: isCollapsed ? 'auto' : '300px',
@@ -34,21 +38,21 @@ const LogsPanel: React.FC<LogsPanelProps> = ({ logs, isCollapsed, onToggle }) =>
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     cursor: 'pointer',
-                    backgroundColor: COLORS.HEADER,
-                    borderBottom: isCollapsed ? 'none' : `1px solid ${COLORS.BORDER}`
+                    backgroundColor: NEON_THEME.colors.bg.header,
+                    borderBottom: isCollapsed ? 'none' : `1px solid ${NEON_THEME.colors.border.default}`
                 }}
             >
                 <div style={{
-                    fontSize: TYPOGRAPHY.FONT_SIZE.MD,
-                    fontWeight: TYPOGRAPHY.FONT_WEIGHT.SEMIBOLD,
-                    color: COLORS.TEXT_PRIMARY,
-                    fontFamily: TYPOGRAPHY.FONT_FAMILY.SANS
+                    fontSize: NEON_THEME.typography.size.md,
+                    fontWeight: NEON_THEME.typography.weight.bold,
+                    color: NEON_THEME.colors.text.primary,
+                    fontFamily: NEON_THEME.typography.fontFamily.sans
                 }}>
                     Python CLI Output
                 </div>
                 <div style={{
-                    fontSize: TYPOGRAPHY.FONT_SIZE.LG,
-                    color: COLORS.TEXT_SECONDARY,
+                    fontSize: NEON_THEME.typography.size.lg,
+                    color: NEON_THEME.colors.text.secondary,
                     transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
                     transition: 'transform 0.3s ease'
                 }}>
@@ -63,10 +67,10 @@ const LogsPanel: React.FC<LogsPanelProps> = ({ logs, isCollapsed, onToggle }) =>
                     style={{
                         flex: 1,
                         padding: DENSITY.COMPACT.padding,
-                        backgroundColor: '#000',
-                        color: COLORS.NEON_GREEN,
-                        fontFamily: TYPOGRAPHY.FONT_FAMILY.MONO,
-                        fontSize: TYPOGRAPHY.FONT_SIZE.SM,
+                        backgroundColor: NEON_THEME.colors.bg.terminal,
+                        color: NEON_THEME.colors.neon.green,
+                        fontFamily: NEON_THEME.typography.fontFamily.mono,
+                        fontSize: NEON_THEME.typography.size.sm,
                         overflowY: 'auto',
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-all'

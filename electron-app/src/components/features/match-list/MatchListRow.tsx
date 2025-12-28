@@ -1,4 +1,4 @@
-import { COLORS, TYPOGRAPHY } from '../../../domain/design/theme';
+import { NEON_THEME } from '../../../domain/design/designTokens';
 import type { MatchRowViewModel } from './MatchRowVMFactory';
 import { OddCell } from './OddCell';
 import { ResultBadge } from './ResultBadge';
@@ -10,26 +10,26 @@ interface MatchListRowProps {
 const cellStyle: React.CSSProperties = {
     padding: '12px 6px',
     textAlign: 'center',
-    color: COLORS.TEXT_PRIMARY
+    color: NEON_THEME.colors.text.primary
 };
 
 export function MatchListRow({ vm }: MatchListRowProps) {
     return (
-        <tr style={{ borderBottom: `1px solid ${COLORS.BORDER}` }}>
-            <td style={{ ...cellStyle, color: COLORS.TEXT_SECONDARY }}>{vm.roundNum}</td>
-            <td style={{ ...cellStyle, color: COLORS.TEXT_SECONDARY, fontSize: TYPOGRAPHY.SIZE.XS }}>
+        <tr style={{ borderBottom: `1px solid ${NEON_THEME.colors.border.default}` }}>
+            <td style={{ ...cellStyle, color: NEON_THEME.colors.text.secondary }}>{vm.roundNum}</td>
+            <td style={{ ...cellStyle, color: NEON_THEME.colors.text.secondary, fontSize: NEON_THEME.typography.size.xs }}>
                 {vm.formattedDate}
             </td>
-            <td style={{ ...cellStyle, color: COLORS.TEXT_SECONDARY }}>{vm.league}</td>
+            <td style={{ ...cellStyle, color: NEON_THEME.colors.text.secondary }}>{vm.league}</td>
             <td style={cellStyle}>
                 <span style={{
                     display: 'inline-block',
                     padding: '2px 6px',
-                    borderRadius: '4px',
+                    borderRadius: NEON_THEME.layout.radius.sm,
                     backgroundColor: `${vm.typeColor}20`,
                     color: vm.typeColor,
                     fontSize: '11px',
-                    fontWeight: TYPOGRAPHY.WEIGHT.BOLD,
+                    fontWeight: NEON_THEME.typography.weight.bold,
                     whiteSpace: 'nowrap',
                     maxWidth: '100px',
                     overflow: 'hidden',
@@ -41,15 +41,15 @@ export function MatchListRow({ vm }: MatchListRowProps) {
             </td>
             <td style={{
                 ...cellStyle,
-                fontWeight: vm.isWin ? TYPOGRAPHY.WEIGHT.BOLD : TYPOGRAPHY.WEIGHT.REGULAR,
-                color: vm.isWin ? COLORS.NEON_GREEN : COLORS.TEXT_PRIMARY
+                fontWeight: vm.isWin ? NEON_THEME.typography.weight.bold : NEON_THEME.typography.weight.medium,
+                color: vm.isWin ? NEON_THEME.colors.neon.green : NEON_THEME.colors.text.primary
             }}>
                 {vm.homeName}
             </td>
             <td style={{
                 ...cellStyle,
-                fontWeight: vm.isLose ? TYPOGRAPHY.WEIGHT.BOLD : TYPOGRAPHY.WEIGHT.REGULAR,
-                color: vm.isLose ? COLORS.NEON_RED : COLORS.TEXT_PRIMARY
+                fontWeight: vm.isLose ? NEON_THEME.typography.weight.bold : NEON_THEME.typography.weight.medium,
+                color: vm.isLose ? NEON_THEME.colors.neon.red : NEON_THEME.colors.text.primary
             }}>
                 {vm.awayName}
             </td>
@@ -69,7 +69,7 @@ export function MatchListRow({ vm }: MatchListRowProps) {
             </td>
 
             {/* 스코어 */}
-            <td style={{ ...cellStyle, fontFamily: 'monospace', fontWeight: TYPOGRAPHY.WEIGHT.BOLD, fontSize: '13px' }}>
+            <td style={{ ...cellStyle, fontFamily: NEON_THEME.typography.fontFamily.mono, fontWeight: NEON_THEME.typography.weight.bold, fontSize: '13px' }}>
                 {vm.displayScore}
             </td>
         </tr>

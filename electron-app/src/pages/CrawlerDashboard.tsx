@@ -1,327 +1,177 @@
-import { useState, useEffect, useCallback } from 'react';
-import DataInventoryCard, { DataRow } from '../components/crawler/DataInventoryCard';
-import CrawlerControlPanel from '../components/crawler/CrawlerControlPanel';
-import { COLORS, SPACING, TYPOGRAPHY } from '../constants/designSystem';
-import type { CrawlerMessage, BetinfoOptions, FlashscoreOptions, MappingOptions } from '../types/crawler';
+import CrawlerControlPanel from '@/components/crawler/CrawlerControlPanel';
+import { NEON_THEME } from '@/domain/design/designTokens';
+import { TerminalWindow } from '@/components/crawler/TerminalWindow';
+import { useCrawler } from '@/hooks/useCrawler';
+import { MetricCard } from '@/components/crawler/MetricCard';
 
 export function CrawlerDashboard() {
-    const [isRunning, setIsRunning] = useState(false);
-    const [logs, setLogs] = useState<string[]>([]);
-    const [progress, setProgress] = useState(0);
-
-    // Handle IPC messages from Python
-    useEffect(() => {
-        const unsubscribe = window.api.crawler.onMessage((message: CrawlerMessage) => {
-            switch (message.type) {
-                case 'STATUS':
-                    setLogs(prev => [...prev, `[STATUS] ${message.payload.statusType}: ${message.payload.value}`]);
-                    break;
-
-                case 'PROGRESS':
-                    setProgress(message.payload.percent);
-                    break;
-
-                case 'DATA':
-                    setLogs(prev => [...prev, `[DATA] Saved ${Object.keys(message.payload).length} items`]);
-                    break;
-
-                case 'LOG':
-                    setLogs(prev => [...prev, `[${message.payload.level}] ${message.payload.message}`]);
-                    break;
-
-                case 'ERROR':
-                    setLogs(prev => [...prev, `[ERROR ${message.payload.code}] ${message.payload.message}`]);
-                    setIsRunning(false);
-                    break;
-
-                case 'CHECKPOINT':
-                    setLogs(prev => [...prev, `[CHECKPOINT] ${message.payload.checkpointId}`]);
-                    break;
-            }
-        });
-
-        // Check initial status
-        window.api.crawler.status().then(({ isRunning }) => {
-            setIsRunning(isRunning);
-        });
-
-        return unsubscribe;
-    }, []);
-
-    const handleStart = useCallback(async (options: BetinfoOptions | FlashscoreOptions | MappingOptions) => {
-        try {
-            setLogs([]);
-            setProgress(0);
-
-            await window.api.crawler.start(options);
-            setIsRunning(true);
-            setLogs(prev => [...prev, `System: Starting crawler (${options.mode})...`]);
-        } catch (error) {
-            console.error('Failed to start crawler:', error);
-            setLogs(prev => [...prev, `[ERROR] Failed to start: ${error}`]);
-        }
-    }, []);
-
-    const handleStop = useCallback(async () => {
-        try {
-            await window.api.crawler.stop();
-            setIsRunning(false);
-            setLogs(prev => [...prev, 'System: Crawler stopped.']);
-        } catch (error) {
-            console.error('Failed to stop crawler:', error);
-            setLogs(prev => [...prev, `[ERROR] Failed to stop: ${error}`]);
-        }
-    }, []);
+    const { isRunning, logs, progress, startCrawler, stopCrawler } = useCrawler();
 
     return (
+        // [Window Background: Deep Void]
         <div style={{
-            backgroundColor: COLORS.APP_BG,
-            height: '100vh',
             display: 'flex',
-            flexDirection: 'column',
-            width: '100%',
-            overflow: 'hidden'
+            height: '100%',
+            backgroundColor: '#050505', // Deep Void
+            padding: '24px', // Increased Gap
+            gap: '24px', // Increased Gap
+            color: NEON_THEME.colors.text.primary,
+            fontFamily: NEON_THEME.typography.fontFamily.sans,
+            overflow: 'hidden',
+            boxSizing: 'border-box'
         }}>
-            {/* Header */}
+            {/* [Floating Control Panel] - The "Remote Control" */}
             <div style={{
-                backgroundColor: COLORS.HEADER,
-                borderBottom: `1px solid ${COLORS.BORDER}`,
-                padding: `${SPACING.MD} ${SPACING.LG}`,
+                width: '360px',
+                minWidth: '360px',
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexShrink: 0,
-                height: '48px',
-                boxSizing: 'border-box'
+                flexDirection: 'column',
+                backgroundColor: 'rgba(10, 15, 20, 0.8)', // Glassmorphism base
+                backdropFilter: 'blur(10px)', // Glass effect
+                borderRadius: '16px',
+                border: `1px solid ${isRunning ? NEON_THEME.colors.neon.cyan : NEON_THEME.colors.border.subtle}`, // Active state border
+                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                overflow: 'hidden',
+                transition: 'border-color 0.3s ease'
             }}>
-                <h1 style={{
-                    margin: 0,
-                    fontSize: TYPOGRAPHY.FONT_SIZE.LG,
-                    fontWeight: TYPOGRAPHY.FONT_WEIGHT.BOLD,
-                    color: COLORS.TEXT_PRIMARY,
-                    fontFamily: TYPOGRAPHY.FONT_FAMILY.SANS,
-                    letterSpacing: '-0.5px'
-                }}>
-                    Crawler Manager
-                </h1>
+
+
+                {/* Scrollable Form Area */}
                 <div style={{
-                    display: 'flex',
-                    gap: SPACING.SM,
-                    alignItems: 'center',
-                    fontSize: '11px',
-                    backgroundColor: '#000',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    border: `1px solid ${COLORS.BORDER}`
+                    flex: 1,
+                    overflowY: 'auto',
+                    padding: NEON_THEME.spacing.xl
                 }}>
+                    <CrawlerControlPanel
+                        onStart={startCrawler}
+                        onStop={stopCrawler}
+                        isRunning={isRunning}
+                    />
+                </div>
+
+                {/* Status Footer */}
+                <div style={{
+                    padding: NEON_THEME.spacing.md,
+                    borderTop: `1px solid ${NEON_THEME.colors.border.subtle}`,
+                    backgroundColor: 'rgba(0,0,0,0.4)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '12px'
+                }}>
+                    <div
+                        onClick={() => window.api.openExternal('https://www.flashscore.co.kr/')}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            opacity: 0.4,
+                            transition: 'opacity 0.2s ease',
+                            cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.4'}
+                    >
+                        <svg preserveAspectRatio="xMinYMid meet" height="12" viewBox="0 0 615 100" width="73" xmlns="http://www.w3.org/2000/svg">
+                            <g clipRule="evenodd" fillRule="evenodd">
+                                <g fill="#fff">
+                                    <path d="m180.8 24.9h-29.3c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v39.6c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-18.6c0-1 .8-1.7 1.7-1.7h25.5c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-25.5c-1 0-1.7-.8-1.7-1.7v-8.6c0-1 .8-1.7 1.7-1.7h29c.2 0 .3-.2.3-.3v-7.9c.1-.5 0-.6-.2-.6"></path>
+                                    <path d="m264.4 47.3c0 1-.8 1.7-1.7 1.7h-22.4c-1 0-1.7-.8-1.7-1.7v-12.1c0-1 .8-1.7 1.7-1.7h22.4c1 0 1.7.8 1.7 1.7zm7.6-14.8-6.6-6.6c-.6-.6-1.5-1-2.4-1h-23c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v39.6c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-15.2c0-1 .8-1.7 1.7-1.7h22.4c1 0 1.7.8 1.7 1.7v15.2c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-39.6c.2-.9-.2-1.8-.8-2.4z"></path>
+                                    <path d="m222.4 74.8h-24.1c-.9 0-1.8-.4-2.4-1l-6.6-6.6c-.6-.6-1-1.5-1-2.4v-39.6c0-.2.2-.3.3-.3h7.9c.2 0 .3.2.3.3v39.3c0 1 .8 1.7 1.7 1.7h23.8c.2 0 .3.2.3.3v7.9c.1.3 0 .4-.2.4"></path>
+                                    <path d="m319.8 53.1-6.6-6.6c-.6-.6-1.5-1-2.4-1h-19.2c-1 0-1.7-.8-1.7-1.7v-8.6c0-1 .8-1.7 1.7-1.7h27.2c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-27.5c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v9.2c0 .9.4 1.8 1 2.4l6.6 6.6c.6.6 1.5 1 2.4 1h19.2c1 0 1.7.8 1.7 1.7v8.6c0 1-.8 1.7-1.7 1.7h-27.2c-.2 0-.3.2-.3.3v7.9c0 .2.2.3.3.3h27.5c.9 0 1.8-.4 2.4-1l6.6-6.6c.6-.6 1-1.5 1-2.4v-9.2c0-.8-.3-1.7-1-2.4"></path>
+                                    <path d="m419 53.1-6.6-6.6c-.6-.6-1.5-1-2.4-1h-19.2c-.9 0-1.7-.8-1.7-1.7v-8.6c0-1 .8-1.7 1.7-1.7h27.2c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-27.5c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v9.2c0 .9.4 1.8 1 2.4l6.6 6.6c.6.6 1.5 1 2.4 1h19.2c1 0 1.7.8 1.7 1.7v8.6c0 1-.8 1.7-1.7 1.7h-27.2c-.2 0-.3.2-.3.3v7.9c0 .2.2.3.3.3h27.5c.9 0 1.8-.4 2.4-1l6.6-6.6c.6-.6 1-1.5 1-2.4v-9.2c0-.8-.4-1.7-1-2.4"></path>
+                                    <path d="m436.8 35.2c0-1 .8-1.7 1.7-1.7h25.5c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-25.8c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v29.9c0 .9.4 1.8 1 2.4l6.6 6.6c.6.6 1.5 1 2.4 1h25.8c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-25.5c-1 0-1.7-.8-1.7-1.7z"></path>
+                                    <path d="m507.1 64.5c0 1-.8 1.7-1.7 1.7h-22.4c-1 0-1.7-.8-1.7-1.7v-29.3c0-1 .8-1.7 1.7-1.7h22.4c1 0 1.7.8 1.7 1.7zm7.6-32-6.6-6.6c-.6-.6-1.5-1-2.4-1h-23c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v29.9c0 .9.4 1.8 1 2.4l6.6 6.6c.6.6 1.5 1 2.4 1h23c.9 0 1.8-.4 2.4-1l6.6-6.6c.6-.6 1-1.5 1-2.4v-29.9c0-.9-.3-1.8-1-2.4z"></path>
+                                    <path d="m371.8 24.9h-7.9c-.2 0-.3.2-.3.3v18.6c0 1-.8 1.7-1.7 1.7h-22.4c-1 0-1.7-.8-1.7-1.7v-18.6c0-.2-.2-.3-.3-.3h-7.9c-.2 0-.3.2-.3.3v49.3c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-18.6c0-1 .8-1.7 1.7-1.7h22.4c1 0 1.7.8 1.7 1.7v18.6c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-49.3c0-.2-.1-.3-.3-.3"></path>
+                                    <path d="m558.4 43.8c0 1-.8 1.7-1.7 1.7h-22.4c-.9 0-1.7-.8-1.7-1.7v-8.6c0-.9.8-1.7 1.7-1.7h22.4c1 0 1.7.8 1.7 1.7zm8.6-8.9c0-.9-.4-1.8-1-2.4l-6.5-6.6c-.6-.6-1.5-1-2.4-1h-32.8c-.2 0-.3.2-.3.3v49.3c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-18.6c0-.9.7-1.6 1.6-1.7h11.1l11.9 20.7h9.9l-11.9-20.7h1.9c.9 0 1.8-.4 2.4-1l6.5-6.6c.6-.6 1-1.5 1-2.4v-9.3z"></path>
+                                    <path d="m585.7 33.5h28.9c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-29.2c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v29.9c0 .9.4 1.8 1 2.4l6.6 6.6c.6.6 1.5 1 2.4 1h29.2c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-28.9c-1 0-1.7-.8-1.7-1.7v-8.6c0-1 .8-1.7 1.7-1.7h20.3c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-20.3c-1 0-1.7-.8-1.7-1.7v-8.6c0-1.4.7-2.1 1.7-2.1"></path>
+                                    <path d="m21.1 55.1c-.5-2.6-.6-5.1-.3-7.6l-20.6-1.9c-.4 4.3-.2 8.6.6 13s2.1 8.6 3.9 12.5l18.7-8.7c-1-2.3-1.8-4.7-2.3-7.3"></path>
+                                    <path d="m27.6 68.8-15.9 13.3c4.7 5.6 10.6 10.1 17.2 13.2l8.7-18.7c-3.8-1.9-7.3-4.5-10-7.8"></path>
+                                    <path d="m55.1 78.9c-2.6.5-5.2.6-7.6.3l-1.8 20.6c4.3.4 8.6.2 13-.6 1.4-.3 2.9-.6 4.3-.9l-5.4-20c-.8.2-1.7.4-2.5.6"></path>
+                                    <path d="m44.9 21.1c3.5-.6 7.1-.6 10.4 0l8.9-19.1c-7.2-2.1-15-2.7-22.9-1.3-19.7 3.5-34.7 18.2-39.6 36.4l20 5.4c2.9-10.7 11.6-19.3 23.2-21.4"></path>
+                                    <path d="m68.8 72.5 13.3 15.8c3.3-2.8 6.3-6.1 8.8-9.6l-16.9-11.9c-1.5 2.1-3.2 4-5.2 5.7"></path>
+                                    <path d="m99.8 45.6-20.6 1.8c.2 1.7.2 3.4 0 5.1l20.6 1.8c.3-2.8.3-5.7 0-8.7"></path>
+                                </g>
+                                <path d="m73.3 0-19.2 41.3 83.1-41.3z" fill="#ff0046"></path>
+                            </g>
+                        </svg>
+                    </div>
                     <div style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        backgroundColor: isRunning ? COLORS.NEON_GREEN : COLORS.TEXT_SECONDARY,
-                        boxShadow: isRunning ? `0 0 5px ${COLORS.NEON_GREEN}` : 'none'
-                    }} />
-                    <span style={{ color: COLORS.TEXT_SECONDARY }}>
-                        {isRunning ? 'RUNNING' : 'IDLE'}
-                    </span>
+                        fontSize: '11px',
+                        textAlign: 'center',
+                        color: isRunning ? NEON_THEME.colors.neon.green : NEON_THEME.colors.text.muted,
+                        letterSpacing: '1px',
+                        fontWeight: 600
+                    }}>
+                        STATUS: {isRunning ? 'SYSTEM ACTIVE' : 'SYSTEM IDLE'}
+                    </div>
                 </div>
             </div>
 
-            {/* Main Layout */}
+            {/* [Right Column] - Split into Stats & Console */}
             <div style={{
                 flex: 1,
                 display: 'flex',
+                flexDirection: 'column',
+                gap: '16px', // Gap between Stats and Console
                 overflow: 'hidden'
             }}>
-                {/* Left Column - Control Panel */}
+                {/* [1. Stats Deck] - Top Module */}
                 <div style={{
-                    flex: '0 0 320px',
-                    maxWidth: '360px',
-                    backgroundColor: COLORS.SURFACE,
-                    borderRight: `1px solid ${COLORS.BORDER}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflowY: 'auto'
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: NEON_THEME.spacing.lg,
+                    padding: NEON_THEME.spacing.xl,
+                    backgroundColor: NEON_THEME.colors.bg.panel,
+                    borderRadius: '16px',
+                    border: `1px solid ${NEON_THEME.colors.border.default}`,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                    minHeight: '140px', // Anchor height
+                    alignContent: 'center'
                 }}>
-                    <div style={{ padding: SPACING.LG, display: 'flex', flexDirection: 'column', gap: SPACING.XL }}>
-
-                        {/* 1. Crawler Execution */}
-                        <Section title="EXECUTION">
-                            <CrawlerControlPanel
-                                onStart={handleStart}
-                                onStop={handleStop}
-                                isRunning={isRunning}
-                            />
-                        </Section>
-
-                        {/* 2. Dashboard Stats (Simplified) */}
-                        <Section title="OVERVIEW">
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <SummaryItem label="Last Run" value="Today, 05:30" />
-                                <SummaryItem label="Total Matches" value="1,240" />
-                                <SummaryItem label="Coverage" value="Betinfo (25), Flashscore (8)" />
-                            </div>
-                        </Section>
-
-                        {/* 3. Settings Links */}
-                        <div style={{ marginTop: 'auto', paddingTop: SPACING.LG }}>
-                            <div style={{
-                                fontSize: '11px',
-                                color: COLORS.TEXT_SECONDARY,
-                                textAlign: 'center',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '4px',
-                                padding: '12px',
-                                backgroundColor: 'rgba(0,0,0,0.2)',
-                                borderRadius: '6px'
-                            }}>
-                                <span style={{ color: COLORS.NEON_BLUE, fontWeight: 'bold' }}>DATA STORAGE</span>
-                                <code style={{ fontFamily: TYPOGRAPHY.FONT_FAMILY.MONO, fontSize: '10px' }}>./data</code>
-                                <div style={{ height: '8px' }} />
-                                <div>Football Proto Box v1.0.0</div>
-                            </div>
-                        </div>
-                    </div>
+                    <MetricCard title="Total Matches" value={logs.length.toString()} unit="games" accent="cyan" />
+                    <MetricCard title="Success Rate" value="98.5" unit="%" accent="green" />
+                    <MetricCard title="Parsing Speed" value="142" unit="ms/item" accent="yellow" />
                 </div>
 
-                {/* Right Column - Data & Logs */}
+                {/* [2. Command Console] - Bottom Module */}
                 <div style={{
                     flex: 1,
                     display: 'flex',
                     flexDirection: 'column',
+                    backgroundColor: '#000000', // Pure black for console feel
+                    borderRadius: '16px',
+                    border: `1px solid ${NEON_THEME.colors.border.default}`,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                     overflow: 'hidden',
-                    backgroundColor: '#0d1117' // Darker bg for content area
+                    position: 'relative' // For visual anchoring
                 }}>
-                    {/* Top: Data Cards */}
+                    {/* Console Header */}
                     <div style={{
-                        flex: '1',
-                        overflowY: 'auto',
-                        padding: SPACING.LG
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: `${NEON_THEME.spacing.md} ${NEON_THEME.spacing.xl}`,
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                        borderBottom: `1px solid ${NEON_THEME.colors.border.subtle}`
                     }}>
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                            gap: SPACING.MD,
-                            marginBottom: SPACING.LG
-                        }}>
-                            <DataInventoryCard title="Betinfo Data">
-                                <DataRow label="Rounds" value="1 ~ 25" status="success" />
-                                <DataRow label="Total" value="25 Files" />
-                            </DataInventoryCard>
-
-                            <DataInventoryCard title="Flashscore Data">
-                                <DataRow label="Leagues" value="8" status="success" />
-                                <DataRow label="Teams" value="160" />
-                            </DataInventoryCard>
-
-                            <DataInventoryCard title="System">
-                                <DataRow label="Python" value="3.9.6" />
-                                <DataRow label="Selenium" value="Ready" status="success" />
-                            </DataInventoryCard>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: NEON_THEME.colors.neon.green, boxShadow: `0 0 5px ${NEON_THEME.colors.neon.green}` }} />
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: NEON_THEME.colors.text.secondary, letterSpacing: '1px' }}>
+                                LIVE TERMINAL
+                            </span>
                         </div>
+                        <span style={{ fontSize: '11px', color: NEON_THEME.colors.text.disabled }}>bash-3.2$ tail -f crawl.log</span>
                     </div>
 
-                    {/* Bottom: Progress & Logs */}
-                    <div style={{
-                        flexShrink: 0,
-                        borderTop: `1px solid ${COLORS.BORDER}`,
-                        backgroundColor: COLORS.SURFACE
-                    }}>
-                        {/* Progress Bar (Conditional) */}
-                        {isRunning && (
-                            <div style={{
-                                height: '4px',
-                                width: '100%',
-                                backgroundColor: COLORS.APP_BG,
-                                overflow: 'hidden'
-                            }}>
-                                <div style={{
-                                    width: `${progress}%`,
-                                    height: '100%',
-                                    backgroundColor: COLORS.NEON_BLUE,
-                                    transition: 'width 0.3s ease'
-                                }} />
-                            </div>
-                        )}
-
-                        {/* Logs Window */}
-                        <div style={{
-                            height: '300px',
-                            display: 'flex',
-                            flexDirection: 'column'
-                        }}>
-                            <div style={{
-                                padding: '8px 16px',
-                                borderBottom: `1px solid ${COLORS.BORDER}`,
-                                fontSize: '11px',
-                                fontWeight: 'bold',
-                                color: COLORS.TEXT_SECONDARY,
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                backgroundColor: COLORS.HEADER
-                            }}>
-                                <span>TERMINAL OUTPUT</span>
-                                <span style={{ fontFamily: TYPOGRAPHY.FONT_FAMILY.MONO }}>{logs.length} lines</span>
-                            </div>
-                            <div style={{
-                                flex: 1,
-                                padding: '12px',
-                                backgroundColor: '#000',
-                                color: '#abb2bf',
-                                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                                fontSize: '12px',
-                                lineHeight: '1.5',
-                                overflowY: 'auto'
-                            }}>
-                                {logs.length === 0 ? (
-                                    <div style={{ opacity: 0.3 }}>Waiting for tasks...</div>
-                                ) : (
-                                    logs.map((log, index) => (
-                                        <div key={index} style={{
-                                            color: log.includes('[ERROR]') ? COLORS.NEON_RED :
-                                                log.includes('[STATUS]') ? COLORS.NEON_CYAN :
-                                                    'inherit',
-                                            paddingLeft: log.startsWith('  ') ? '16px' : '0'
-                                        }}>
-                                            {log}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
+                    {/* Console Body */}
+                    <div style={{ flex: 1, overflow: 'hidden', padding: NEON_THEME.spacing.lg }}>
+                        <TerminalWindow
+                            logs={logs}
+                            progress={progress}
+                        />
                     </div>
                 </div>
             </div>
         </div>
     );
 }
-
-// Minimal Helpers
-const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <h3 style={{
-            margin: 0,
-            fontSize: '11px',
-            fontWeight: 'bold',
-            color: COLORS.TEXT_SECONDARY,
-            letterSpacing: '1px'
-        }}>
-            {title}
-        </h3>
-        {children}
-    </div>
-);
-
-const SummaryItem = ({ label, value }: { label: string, value: string }) => (
-    <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        fontSize: '13px',
-        padding: '4px 0',
-        borderBottom: `1px dashed ${COLORS.BORDER}`
-    }}>
-        <span style={{ color: COLORS.TEXT_SECONDARY }}>{label}</span>
-        <span style={{ color: COLORS.TEXT_PRIMARY }}>{value}</span>
-    </div>
-);

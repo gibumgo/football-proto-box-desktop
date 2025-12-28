@@ -30,6 +30,12 @@ export const TEXTS = {
         STATUS_LABEL: 'Status:',
         LOG_EMPTY: 'System Ready. Waiting for commands...',
 
+        TERMINAL: {
+            TITLE: 'Live Execution Log',
+            LINES: 'Lines',
+            WAITING: '_ Waiting for tasks...',
+        },
+
         // Options
         SITE_BETINFO: 'Betinfo (Proto)',
         SITE_FLASHSCORE: 'Flashscore',
@@ -110,6 +116,24 @@ export const TEXTS = {
             LOSE: 'LOSE',
             RESULT: 'RESULT',
             ODD: 'ODD'
+        },
+        HEADERS: {
+            ROUND: '회차',
+            MATCH_NO: '번호',
+            DATE: '경기 일시',
+            LEAGUE: '리그',
+            TYPE: '경기 종류',
+            HOME: '홈팀',
+            AWAY: '원정팀',
+            WIN: '승',
+            DRAW: '무',
+            LOSE: '패',
+            RESULT: '결과',
+            SCORE: '스코어',
+            WIN_ODD: '승 배당',
+            DRAW_ODD: '무 배당',
+            LOSE_ODD: '패 배당',
+            RESULT_ODD: '결과 배당'
         }
     },
 

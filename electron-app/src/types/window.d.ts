@@ -10,6 +10,7 @@ declare global {
                 status: () => Promise<{ isRunning: boolean }>;
                 onMessage: (callback: (message: CrawlerMessage) => void) => () => void;
             };
+            openExternal: (url: string) => void;
         };
     }
 }

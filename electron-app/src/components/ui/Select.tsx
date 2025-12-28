@@ -1,130 +1,70 @@
-import { useState, useRef, useEffect } from 'react';
-import { COLORS, TYPOGRAPHY } from '../../domain/design/theme';
+import React from 'react';
+import { NEON_THEME } from '../../domain/design/designTokens';
 
-interface Option {
-    label: string;
-    value: string | number;
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+    label?: string;
+    options: { label: string; value: string }[];
+    fullWidth?: boolean;
 }
 
-interface SelectProps {
-    value: string | number | null;
-    onChange: (value: any) => void;
-    options: Option[];
-    placeholder?: string;
-    width?: string;
-}
-
-export function Select({ value, onChange, options, placeholder = '선택해주세요', width = '200px' }: SelectProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    const selectedOption = options.find(opt => opt.value === value);
-
-    // Click outside handler
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const handleSelect = (val: string | number) => {
-        onChange(val);
-        setIsOpen(false);
-    };
-
+export const Select: React.FC<SelectProps> = ({
+    label,
+    options,
+    fullWidth = false,
+    style,
+    ...props
+}) => {
     return (
-        <div
-            ref={containerRef}
-            style={{
-                position: 'relative',
-                width,
-                fontFamily: TYPOGRAPHY.FONT_FAMILY
-            }}
-        >
-            {/* Trigger */}
-            <div
-                onClick={() => setIsOpen(!isOpen)}
-                style={{
-                    padding: '10px 16px',
-                    backgroundColor: COLORS.PANEL,
-                    border: `1px solid ${isOpen ? COLORS.NEON_BLUE : COLORS.BORDER}`,
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    color: selectedOption ? COLORS.TEXT_PRIMARY : COLORS.TEXT_SECONDARY,
-                    transition: 'all 0.2s ease',
-                    boxShadow: isOpen ? `0 0 8px ${COLORS.NEON_BLUE}40` : 'none',
-                    fontSize: TYPOGRAPHY.SIZE.SM,
-                    fontWeight: TYPOGRAPHY.WEIGHT.SEMIBOLD
-                }}
-            >
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {selectedOption ? selectedOption.label : placeholder}
-                </span>
-                <span style={{
-                    transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s ease',
-                    fontSize: '10px',
-                    color: COLORS.TEXT_SECONDARY
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            width: fullWidth ? '100%' : 'auto',
+            flex: fullWidth ? 1 : 'unset'
+        }}>
+            {label && (
+                <label style={{
+                    fontSize: NEON_THEME.typography.size.sm,
+                    color: NEON_THEME.colors.text.secondary,
+                    fontWeight: NEON_THEME.typography.weight.medium,
+                    marginLeft: '2px'
                 }}>
-                    ▼
-                </span>
-            </div>
-
-            {/* Dropdown Menu */}
-            {isOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 4px)',
-                    left: 0,
-                    width: '100%',
-                    maxHeight: '240px',
-                    overflowY: 'auto',
-                    backgroundColor: COLORS.SURFACE,
-                    border: `1px solid ${COLORS.BORDER}`,
-                    borderRadius: '6px',
-                    zIndex: 1000,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
-                }}>
-                    {options.map((option) => {
-                        const isSelected = option.value === value;
-                        return (
-                            <div
-                                key={String(option.value)}
-                                onClick={() => handleSelect(option.value)}
-                                style={{
-                                    padding: '10px 16px',
-                                    cursor: 'pointer',
-                                    backgroundColor: isSelected ? 'rgba(79, 195, 247, 0.1)' : 'transparent',
-                                    color: isSelected ? COLORS.NEON_BLUE : COLORS.TEXT_PRIMARY,
-                                    fontSize: TYPOGRAPHY.SIZE.SM,
-                                    borderBottom: `1px solid ${COLORS.BORDER}40`,
-                                    transition: 'background-color 0.15s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
-                                }}
-                            >
-                                {option.label}
-                            </div>
-                        );
-                    })}
-                    {options.length === 0 && (
-                        <div style={{ padding: '12px', textAlign: 'center', color: COLORS.TEXT_SECONDARY, fontSize: TYPOGRAPHY.SIZE.SM }}>
-                            데이터 없음
-                        </div>
-                    )}
-                </div>
+                    {label}
+                </label>
             )}
+            <select
+                style={{
+                    padding: '8px 12px',
+                    backgroundColor: NEON_THEME.colors.bg.app,
+                    border: `1px solid ${NEON_THEME.colors.border.default}`,
+                    borderRadius: NEON_THEME.layout.radius.sm,
+                    color: NEON_THEME.colors.text.primary,
+                    fontSize: NEON_THEME.typography.size.sm,
+                    fontFamily: NEON_THEME.typography.fontFamily.sans,
+                    outline: 'none',
+                    width: '100%',
+                    cursor: 'pointer',
+                    appearance: 'none',
+                    backgroundImage: `linear-gradient(45deg, transparent 50%, ${NEON_THEME.colors.text.secondary} 50%), linear-gradient(135deg, ${NEON_THEME.colors.text.secondary} 50%, transparent 50%)`,
+                    backgroundPosition: 'calc(100% - 20px) calc(1em + 2px), calc(100% - 15px) calc(1em + 2px)',
+                    backgroundSize: '5px 5px, 5px 5px',
+                    backgroundRepeat: 'no-repeat',
+                    ...style
+                }}
+                onFocus={(e) => {
+                    e.currentTarget.style.borderColor = NEON_THEME.colors.neon.cyan;
+                }}
+                onBlur={(e) => {
+                    e.currentTarget.style.borderColor = NEON_THEME.colors.border.default;
+                }}
+                {...props}
+            >
+                {options.map(opt => (
+                    <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                    </option>
+                ))}
+            </select>
         </div>
     );
-}
+};

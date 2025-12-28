@@ -33,6 +33,13 @@ export interface MappingOptions extends CommonOptions {
     task: 'leagues' | 'teams';
 }
 
+export interface AdvancedOptions {
+    headless: boolean;
+    debug: boolean;
+    timeout: number;
+    outputDir: string;
+}
+
 export type CrawlerOptions = BetinfoOptions | FlashscoreOptions | MappingOptions;
 
 export interface CrawlerMessage {

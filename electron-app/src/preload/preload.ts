@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('api', {
             ipcRenderer.on('crawler:message', listener);
             return () => ipcRenderer.removeListener('crawler:message', listener);
         }
-    }
+    },
+    // Utils
+    openExternal: (url: string) => ipcRenderer.send('open-url', url)
 });
 

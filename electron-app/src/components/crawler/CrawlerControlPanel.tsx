@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
-import { COLORS, SPACING, TYPOGRAPHY, GLOW_EFFECTS } from '../../constants/designSystem';
-import { TEXTS } from '../../constants/uiTexts';
-import type { BetinfoOptions, FlashscoreOptions, MappingOptions } from '../../types/crawler';
+import { NEON_THEME } from '@/domain/design/designTokens';
+import { TEXTS } from '@/constants/uiTexts';
+import type { BetinfoOptions, FlashscoreOptions, MappingOptions } from '@/types/crawler';
+import { Button } from '@/components/ui/Button';
+
+// Refactored Sub-Forms
+import { BetinfoConfigForm } from './forms/BetinfoConfigForm';
+import { FlashscoreConfigForm } from './forms/FlashscoreConfigForm';
+import { MappingConfigForm } from './forms/MappingConfigForm';
+import { AdvancedConfigForm } from './forms/AdvancedConfigForm';
+
+// Custom Hooks (WTC Style)
+import { useBetinfoForm } from '@/hooks/crawler/useBetinfoForm';
+import { useFlashscoreForm } from '@/hooks/crawler/useFlashscoreForm';
+import { useMappingForm } from '@/hooks/crawler/useMappingForm';
+import { useAdvancedForm } from '@/hooks/crawler/useAdvancedForm';
 
 interface CrawlerControlPanelProps {
     onStart: (options: BetinfoOptions | FlashscoreOptions | MappingOptions) => void;
@@ -13,8 +26,11 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
     const [site, setSite] = useState<'betinfo' | 'flashscore' | 'mapping'>('betinfo');
 
-    // Config States matching Python config.py defaults
-    const [betinfoConfig, setBetinfoConfig] = useState<Partial<BetinfoOptions>>({
+    // 1. Betinfo Config (New Hook Pattern)
+    const {
+        config: betinfoConfig,
+        handlers: betinfoHandlers
+    } = useBetinfoForm({
         collectionType: 'recent',
         recent: 5,
         startRound: '040',
@@ -23,18 +39,30 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
         year: new Date().getFullYear()
     });
 
-    const [flashscoreConfig, setFlashscoreConfig] = useState<Partial<FlashscoreOptions>>({
+    // 2. Flashscore Config (New Hook Pattern)
+    const {
+        config: flashscoreConfig,
+        handlers: flashscoreHandlers
+    } = useFlashscoreForm({
         task: 'metadata',
         season: '2025-2026',
         url: '',
         resume: false
     });
 
-    const [mappingConfig, setMappingConfig] = useState<Partial<MappingOptions>>({
+    // 3. Mapping Config (New Hook Pattern)
+    const {
+        config: mappingConfig,
+        handlers: mappingHandlers
+    } = useMappingForm({
         task: 'leagues'
     });
 
-    const [advancedConfig, setAdvancedConfig] = useState({
+    // 4. Advanced Settings
+    const {
+        config: advancedConfig,
+        handlers: advancedHandlers
+    } = useAdvancedForm({
         headless: true,
         debug: false,
         timeout: 300,
@@ -55,6 +83,7 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
             });
         } else if (site === 'flashscore') {
             if (!flashscoreConfig.url) {
+                // TODO: Replace with Neon Toast/Alert
                 alert(TEXTS.CRAWLER.CONTROL_PANEL.MSG_URL_REQUIRED);
                 return;
             }
@@ -64,7 +93,9 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
                 task: flashscoreConfig.task as any,
                 season: flashscoreConfig.season,
                 url: flashscoreConfig.url!,
-                resume: flashscoreConfig.resume
+                resume: flashscoreConfig.resume,
+                fsStartRound: flashscoreConfig.fsStartRound,
+                fsEndRound: flashscoreConfig.fsEndRound
             });
         } else {
             onStart({
@@ -80,63 +111,124 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
             display: 'flex',
             flexDirection: 'column',
             width: '100%',
-            gap: SPACING.LG
+            gap: NEON_THEME.spacing.lg
         }}>
-            {/* Site Selector - Integrated Look */}
+            {/* Site Selector - Chrome Style Tabs */}
             <div style={{
                 display: 'flex',
-                backgroundColor: COLORS.APP_BG,
-                padding: '4px',
-                borderRadius: '6px',
-                border: `1px solid ${COLORS.BORDER}`
+                alignItems: 'flex-end',
+                padding: `0 ${NEON_THEME.spacing.sm}`,
+                borderBottom: `1px solid ${NEON_THEME.colors.border.default}`,
+                marginBottom: NEON_THEME.spacing.sm,
+                gap: '4px',
+                width: '100%' // Ensure full width
             }}>
-                <SiteButton
-                    label={TEXTS.CRAWLER.SITE_BETINFO}
-                    active={site === 'betinfo'}
-                    onClick={() => setSite('betinfo')}
-                    disabled={isRunning}
-                />
-                <SiteButton
-                    label={TEXTS.CRAWLER.SITE_FLASHSCORE}
-                    active={site === 'flashscore'}
-                    onClick={() => setSite('flashscore')}
-                    disabled={isRunning}
-                />
-                <SiteButton
-                    label={TEXTS.CRAWLER.SITE_MAPPING}
-                    active={site === 'mapping'}
-                    onClick={() => setSite('mapping')}
-                    disabled={isRunning}
-                />
+                {[
+                    { label: TEXTS.CRAWLER.SITE_BETINFO, value: 'betinfo' },
+                    { label: TEXTS.CRAWLER.SITE_FLASHSCORE, value: 'flashscore' },
+                    { label: TEXTS.CRAWLER.SITE_MAPPING, value: 'mapping' }
+                ].map((tab) => {
+                    const isActive = site === tab.value;
+                    return (
+                        <div
+                            key={tab.value}
+                            onClick={() => !isRunning && setSite(tab.value as any)}
+                            style={{
+                                flex: 1, // Distribute space equally
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                padding: `${NEON_THEME.spacing.sm} 4px`, // Reduced side padding
+                                backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                                borderTopLeftRadius: '8px',
+                                borderTopRightRadius: '8px',
+                                cursor: isRunning ? 'not-allowed' : 'pointer',
+                                opacity: isRunning && !isActive ? 0.5 : 1,
+                                position: 'relative',
+                                transition: 'all 0.2s ease',
+                                minWidth: 0, // Allow flex items to shrink below content size
+                                textAlign: 'center',
+                                userSelect: 'none',
+                                color: isActive ? NEON_THEME.colors.text.primary : NEON_THEME.colors.text.muted,
+                                border: isActive ? `1px solid ${NEON_THEME.colors.border.subtle}` : '1px solid transparent',
+                                borderBottom: 'none',
+                                marginBottom: '-1px', // Merge with bottom border
+                                zIndex: isActive ? 1 : 0,
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isActive && !isRunning) {
+                                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isActive) {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                }
+                            }}
+                        >
+                            <span style={{
+                                fontSize: '12px',
+                                fontWeight: isActive ? 600 : 400,
+                                letterSpacing: '0.5px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                maxWidth: '100%'
+                            }}>
+                                {tab.label}
+                            </span>
+                            {/* Active Tab Indicator/Line */}
+                            {isActive && (
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '-1px',
+                                    left: 0,
+                                    right: 0,
+                                    height: '2px',
+                                    backgroundColor: NEON_THEME.colors.neon.cyan, // Highlight color
+                                    borderRadius: '2px 2px 0 0'
+                                }} />
+                            )}
+                        </div>
+                    );
+                })}
             </div>
 
-            {/* Main Config Form */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.MD }}>
+            {/* Main Config Form Area */}
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: NEON_THEME.spacing.md,
+                minHeight: '200px' // Prevent layout shift
+            }}>
                 {site === 'betinfo' && (
                     <BetinfoConfigForm
                         config={betinfoConfig}
-                        onChange={setBetinfoConfig}
+                        handlers={betinfoHandlers}
                         disabled={isRunning}
                     />
                 )}
                 {site === 'flashscore' && (
                     <FlashscoreConfigForm
                         config={flashscoreConfig}
-                        onChange={setFlashscoreConfig}
+                        handlers={flashscoreHandlers}
                         disabled={isRunning}
                     />
                 )}
                 {site === 'mapping' && (
                     <MappingConfigForm
                         config={mappingConfig}
-                        onChange={setMappingConfig}
+                        handlers={mappingHandlers}
                         disabled={isRunning}
                     />
                 )}
             </div>
 
             {/* Advanced Settings Accordion */}
-            <div style={{ borderTop: `1px solid ${COLORS.BORDER}`, paddingTop: SPACING.SM }}>
+            <div style={{
+                borderTop: `1px solid ${NEON_THEME.colors.border.default}`,
+                paddingTop: NEON_THEME.spacing.sm
+            }}>
                 <button
                     onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
                     style={{
@@ -146,22 +238,28 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
                         alignItems: 'center',
                         background: 'none',
                         border: 'none',
-                        color: COLORS.TEXT_SECONDARY,
+                        color: NEON_THEME.colors.text.secondary,
                         cursor: 'pointer',
-                        padding: `${SPACING.XS} 0`,
-                        fontSize: TYPOGRAPHY.FONT_SIZE.SM,
-                        fontWeight: TYPOGRAPHY.FONT_WEIGHT.MEDIUM
+                        padding: `${NEON_THEME.spacing.xs} 0`,
+                        fontSize: NEON_THEME.typography.size.sm,
+                        fontWeight: NEON_THEME.typography.weight.medium,
+                        outline: 'none'
                     }}
                 >
                     <span>{TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED_SETTINGS}</span>
-                    <span style={{ fontSize: '10px', transform: isAdvancedOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+                    <span style={{
+                        fontSize: '10px',
+                        transform: isAdvancedOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s',
+                        color: isAdvancedOpen ? NEON_THEME.colors.neon.cyan : 'inherit'
+                    }}>▼</span>
                 </button>
 
                 {isAdvancedOpen && (
-                    <div style={{ marginTop: SPACING.MD, animation: 'fadeIn 0.2s ease' }}>
+                    <div style={{ marginTop: NEON_THEME.spacing.md, animation: 'fadeIn 0.2s ease' }}>
                         <AdvancedConfigForm
                             config={advancedConfig}
-                            onChange={setAdvancedConfig}
+                            handlers={advancedHandlers}
                             disabled={isRunning}
                         />
                     </div>
@@ -169,429 +267,33 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: SPACING.SM, marginTop: SPACING.XS }}>
-                <button
-                    onClick={handleStart}
-                    disabled={isRunning}
-                    style={{
-                        flex: 1,
-                        height: '40px',
-                        backgroundColor: isRunning ? COLORS.SURFACE : COLORS.NEON_BLUE,
-                        color: isRunning ? COLORS.TEXT_MUTED : '#000',
-                        border: 'none',
-                        borderRadius: '4px',
-                        fontSize: TYPOGRAPHY.FONT_SIZE.SM,
-                        fontWeight: TYPOGRAPHY.FONT_WEIGHT.BOLD,
-                        cursor: isRunning ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: isRunning ? 'none' : GLOW_EFFECTS.NEON_BLUE
-                    }}
-                >
-                    {isRunning ? TEXTS.CRAWLER.CONTROL_PANEL.BTN_RUNNING : TEXTS.CRAWLER.CONTROL_PANEL.BTN_START}
-                </button>
-
-                {isRunning && (
-                    <button
+            <div style={{ display: 'flex', gap: NEON_THEME.spacing.sm, marginTop: NEON_THEME.spacing.xs }}>
+                {!isRunning ? (
+                    <Button
+                        variant="primary"
+                        fullWidth
+                        onClick={handleStart}
+                        style={{ height: '40px', fontSize: '14px' }}
+                    >
+                        {TEXTS.CRAWLER.CONTROL_PANEL.BTN_START}
+                    </Button>
+                ) : (
+                    <Button
+                        variant="danger"
+                        fullWidth
                         onClick={onStop}
-                        style={{
-                            padding: `0 ${SPACING.LG}`,
-                            height: '40px',
-                            backgroundColor: COLORS.NEON_RED,
-                            color: '#FFF',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: TYPOGRAPHY.FONT_SIZE.SM,
-                            fontWeight: TYPOGRAPHY.FONT_WEIGHT.BOLD,
-                            cursor: 'pointer',
-                            opacity: 0.9
-                        }}
+                        style={{ height: '40px', fontSize: '14px' }}
                     >
                         {TEXTS.CRAWLER.CONTROL_PANEL.BTN_STOP}
-                    </button>
+                    </Button>
                 )}
             </div>
+
+            <style>
+                {`@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }`}
+            </style>
         </div>
     );
-};
-
-// Sub Components
-const SiteButton = ({ label, active, onClick, disabled }: any) => (
-    <button
-        onClick={onClick}
-        disabled={disabled}
-        style={{
-            flex: 1,
-            padding: '8px',
-            backgroundColor: active ? COLORS.NEON_BLUE : 'transparent',
-            color: active ? '#000' : COLORS.TEXT_SECONDARY,
-            border: 'none',
-            borderRadius: '4px',
-            fontSize: TYPOGRAPHY.FONT_SIZE.SM,
-            fontWeight: active ? TYPOGRAPHY.FONT_WEIGHT.BOLD : TYPOGRAPHY.FONT_WEIGHT.NORMAL,
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            opacity: disabled ? 0.7 : 1,
-            transition: 'all 0.2s'
-        }}
-    >
-        {label}
-    </button>
-);
-
-const BetinfoConfigForm = ({ config, onChange, disabled }: any) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.LG }}>
-        <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_YEAR}>
-            <input
-                type="number"
-                value={config.year}
-                onChange={(e) => onChange({ ...config, year: parseInt(e.target.value) })}
-                disabled={disabled}
-                style={{ ...inputStyle, maxWidth: '120px' }}
-            />
-        </FormField>
-
-        <RadioGroup label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_COLLECTION_TYPE}>
-            <RadioButton
-                label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.TYPE_RECENT}
-                checked={config.collectionType === 'recent'}
-                onClick={() => onChange({ ...config, collectionType: 'recent' })}
-                disabled={disabled}
-            />
-            <RadioButton
-                label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.TYPE_RANGE}
-                checked={config.collectionType === 'range'}
-                onClick={() => onChange({ ...config, collectionType: 'range' })}
-                disabled={disabled}
-            />
-        </RadioGroup>
-
-        {config.collectionType === 'recent' ? (
-            <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_RECENT_COUNT}>
-                <input
-                    type="number"
-                    value={config.recent}
-                    onChange={(e) => onChange({ ...config, recent: parseInt(e.target.value) })}
-                    disabled={disabled}
-                    style={{ ...inputStyle, maxWidth: '120px' }}
-                />
-            </FormField>
-        ) : (
-            <div style={{ display: 'flex', gap: SPACING.SM }}>
-                <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_START_ROUND}>
-                    <input
-                        type="text"
-                        maxLength={3}
-                        value={config.startRound}
-                        onChange={(e) => onChange({ ...config, startRound: e.target.value.replace(/[^0-9]/g, '') })}
-                        disabled={disabled}
-                        style={inputStyle}
-                        placeholder={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.PLACEHOLDER_START_ROUND}
-                    />
-                </FormField>
-                <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_END_ROUND}>
-                    <input
-                        type="text"
-                        maxLength={3}
-                        value={config.endRound}
-                        onChange={(e) => onChange({ ...config, endRound: e.target.value.replace(/[^0-9]/g, '') })}
-                        disabled={disabled}
-                        style={inputStyle}
-                        placeholder={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.PLACEHOLDER_END_ROUND}
-                    />
-                </FormField>
-            </div>
-        )}
-
-
-    </div>
-);
-
-const FlashscoreConfigForm = ({ config, onChange, disabled }: any) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.LG }}>
-        <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_TASK_TYPE}>
-            <select
-                value={config.task}
-                onChange={(e) => onChange({ ...config, task: e.target.value })}
-                disabled={disabled}
-                style={inputStyle}
-            >
-                <option value="metadata">{TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.TYPE_METADATA}</option>
-                <option value="matches">{TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.TYPE_MATCHES}</option>
-            </select>
-        </FormField>
-
-        <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_TARGET_URL}>
-            <input
-                type="text"
-                value={config.url}
-                onChange={(e) => {
-                    const newUrl = e.target.value;
-                    let updates: any = { url: newUrl };
-
-                    // 자동 시즌 감지 로직 (Smart Season)
-                    // 예: ...-2024-2025/... -> 24-25
-                    const seasonMatch = newUrl.match(/-(\d{2})(\d{2})-(\d{2})(\d{2})\//);
-                    if (seasonMatch) {
-                        updates.season = `${seasonMatch[2]}-${seasonMatch[4]}`;
-                    }
-
-                    onChange({ ...config, ...updates });
-                }}
-                disabled={disabled}
-                style={inputStyle}
-                placeholder={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.PLACEHOLDER_TARGET_URL}
-            />
-            <div style={{
-                marginTop: '6px',
-                fontSize: '11px',
-                color: COLORS.TEXT_SECONDARY,
-                lineHeight: '1.4',
-                backgroundColor: 'rgba(0,0,0,0.2)',
-                padding: '8px',
-                borderRadius: '4px',
-                borderLeft: `2px solid ${COLORS.NEON_BLUE}`
-            }}>
-                {config.task === 'metadata' ? (
-                    <>
-                        <strong style={{ color: COLORS.NEON_BLUE }}>{TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_METADATA_TITLE}</strong><br />
-                        {TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_METADATA_DESC}<br />
-                        {TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_METADATA_EX}
-                    </>
-                ) : (
-                    <>
-                        <strong style={{ color: COLORS.NEON_BLUE }}>{TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_MATCHES_TITLE}</strong><br />
-                        {TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_MATCHES_DESC}<br />
-                        {TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_MATCHES_EX}
-                    </>
-                )}
-            </div>
-        </FormField>
-
-        {config.task === 'matches' ? (
-            <div style={{ display: 'flex', gap: SPACING.SM }}>
-                <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_SEASON}>
-                    <input
-                        type="text"
-                        value={config.season}
-                        onChange={(e) => onChange({ ...config, season: e.target.value })}
-                        disabled={disabled}
-                        style={inputStyle}
-                    />
-                </FormField>
-                <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_START_ROUND}>
-                    <input
-                        type="number"
-                        min="1"
-                        max="38"
-                        value={config.fsStartRound || ''}
-                        onChange={(e) => onChange({ ...config, fsStartRound: parseInt(e.target.value) })}
-                        disabled={disabled}
-                        style={inputStyle}
-                        placeholder={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.PLACEHOLDER_START_ROUND}
-                    />
-                </FormField>
-                <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_END_ROUND}>
-                    <input
-                        type="number"
-                        min="1"
-                        max="38"
-                        value={config.fsEndRound || ''}
-                        onChange={(e) => onChange({ ...config, fsEndRound: parseInt(e.target.value) })}
-                        disabled={disabled}
-                        style={inputStyle}
-                        placeholder={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.PLACEHOLDER_END_ROUND}
-                    />
-                </FormField>
-            </div>
-        ) : (
-            <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_SEASON}>
-                <input
-                    type="text"
-                    value={config.season}
-                    onChange={(e) => onChange({ ...config, season: e.target.value })}
-                    disabled={disabled}
-                    style={inputStyle}
-                />
-            </FormField>
-        )}
-
-        <Checkbox
-            label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.CHECKBOX_RESUME}
-            checked={config.resume}
-            onChange={(checked: boolean) => onChange({ ...config, resume: checked })}
-            disabled={disabled}
-        />
-    </div>
-);
-
-const AdvancedConfigForm = ({ config, onChange, disabled }: any) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.MD }}>
-        <Checkbox
-            label={TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED.CHECKBOX_HEADLESS}
-            checked={config.headless}
-            onChange={(checked: boolean) => onChange({ ...config, headless: checked })}
-            disabled={disabled}
-        />
-
-        <Checkbox
-            label={TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED.CHECKBOX_DEBUG}
-            checked={config.debug}
-            onChange={(checked: boolean) => onChange({ ...config, debug: checked })}
-            disabled={disabled}
-        />
-
-        <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED.LABEL_TIMEOUT}>
-            <input
-                type="number"
-                value={config.timeout}
-                onChange={(e) => onChange({ ...config, timeout: parseInt(e.target.value) })}
-                disabled={disabled}
-                style={{ ...inputStyle, maxWidth: '100px' }}
-            />
-        </FormField>
-
-        <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED.LABEL_OUTPUT_DIR}>
-            <input
-                type="text"
-                value={config.outputDir}
-                onChange={(e) => onChange({ ...config, outputDir: e.target.value })}
-                disabled={disabled}
-                style={inputStyle}
-            />
-        </FormField>
-    </div>
-);
-
-const MappingConfigForm = ({ config, onChange, disabled }: any) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.LG }}>
-        <RadioGroup label={TEXTS.CRAWLER.CONTROL_PANEL.MAPPING.LABEL_DESCRIPTION}>
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                padding: '12px',
-                backgroundColor: 'rgba(0,0,0,0.2)',
-                borderRadius: '6px',
-                borderLeft: `2px solid ${COLORS.NEON_CYAN}`,
-                fontSize: '12px',
-                color: COLORS.TEXT_SECONDARY
-            }}>
-                {config.task === 'leagues' ? (
-                    <span>{TEXTS.CRAWLER.CONTROL_PANEL.MAPPING.DESC_MAP_LEAGUES}</span>
-                ) : (
-                    <span>{TEXTS.CRAWLER.CONTROL_PANEL.MAPPING.DESC_MAP_TEAMS}</span>
-                )}
-            </div>
-        </RadioGroup>
-
-        <RadioGroup label="Mapping Task">
-            <div style={{ display: 'flex', gap: SPACING.LG }}>
-                <RadioButton
-                    label={TEXTS.CRAWLER.CONTROL_PANEL.MAPPING.BTN_MAP_LEAGUES}
-                    checked={config.task === 'leagues'}
-                    onClick={() => onChange({ ...config, task: 'leagues' })}
-                    disabled={disabled}
-                />
-                <RadioButton
-                    label={TEXTS.CRAWLER.CONTROL_PANEL.MAPPING.BTN_MAP_TEAMS}
-                    checked={config.task === 'teams'}
-                    onClick={() => onChange({ ...config, task: 'teams' })}
-                    disabled={disabled}
-                />
-            </div>
-        </RadioGroup>
-    </div>
-);
-
-const FormField = ({ label, children }: any) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-        <label style={{
-            fontSize: TYPOGRAPHY.FONT_SIZE.SM,
-            color: COLORS.TEXT_SECONDARY,
-            fontWeight: TYPOGRAPHY.FONT_WEIGHT.MEDIUM
-        }}>
-            {label}
-        </label>
-        {children}
-    </div>
-);
-
-const RadioGroup = ({ label, children }: any) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <label style={{ fontSize: TYPOGRAPHY.FONT_SIZE.SM, color: COLORS.TEXT_SECONDARY }}>{label}</label>
-        <div style={{ display: 'flex', gap: SPACING.LG }}>{children}</div>
-    </div>
-);
-
-const RadioButton = ({ label, checked, onClick, disabled }: any) => (
-    <label style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        color: checked ? COLORS.NEON_BLUE : COLORS.TEXT_PRIMARY,
-        fontSize: TYPOGRAPHY.FONT_SIZE.SM,
-        userSelect: 'none'
-    }}>
-        <div
-            onClick={!disabled ? onClick : undefined}
-            style={{
-                width: '14px',
-                height: '14px',
-                borderRadius: '50%',
-                border: `1px solid ${checked ? COLORS.NEON_BLUE : COLORS.TEXT_SECONDARY}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}>
-            {checked && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: COLORS.NEON_BLUE }} />}
-        </div>
-        <span onClick={!disabled ? onClick : undefined}>{label}</span>
-    </label>
-);
-
-const Checkbox = ({ label, checked, onChange, disabled }: any) => (
-    <label style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        color: COLORS.TEXT_PRIMARY,
-        fontSize: TYPOGRAPHY.FONT_SIZE.SM,
-        userSelect: 'none'
-    }}>
-        <div
-            onClick={() => !disabled && onChange(!checked)}
-            style={{
-                width: '16px',
-                height: '16px',
-                borderRadius: '3px',
-                border: `1px solid ${checked ? COLORS.NEON_BLUE : COLORS.TEXT_SECONDARY}`,
-                backgroundColor: checked ? 'rgba(0, 255, 255, 0.1)' : 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: COLORS.NEON_BLUE,
-                fontSize: '12px',
-                fontWeight: 'bold'
-            }}>
-            {checked && '✓'}
-        </div>
-        <span onClick={() => !disabled && onChange(!checked)}>{label}</span>
-    </label>
-);
-
-const inputStyle: React.CSSProperties = {
-    padding: '8px 12px',
-    backgroundColor: COLORS.APP_BG,
-    border: `1px solid ${COLORS.BORDER}`,
-    borderRadius: '4px',
-    color: COLORS.TEXT_PRIMARY,
-    fontSize: TYPOGRAPHY.FONT_SIZE.SM,
-    fontFamily: TYPOGRAPHY.FONT_FAMILY.MONO,
-    outline: 'none',
-    width: '100%',
-    transition: 'border-color 0.2s',
-    boxSizing: 'border-box'
 };
 
 export default CrawlerControlPanel;

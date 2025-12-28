@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'path';
 import { spawn } from 'child_process';
 import { PythonRunner } from './pythonRunner';
@@ -121,4 +121,7 @@ ipcMain.handle('crawler:stop', async () => {
 ipcMain.handle('crawler:status', async () => {
     const isRunning = pythonRunner ? pythonRunner.isRunning() : false;
     return { isRunning };
+});
+ipcMain.on('open-url', (_event, url: string) => {
+    shell.openExternal(url);
 });

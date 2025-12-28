@@ -1,5 +1,5 @@
 import { Match } from '../../../domain/models/match/Match';
-import { COLORS } from '../../../domain/design/theme';
+import { NEON_THEME } from '../../../domain/design/designTokens';
 import { MatchTypeHelper, MatchTypeConstants } from '../../../utils/matchTypeHelper';
 
 export interface MatchRowViewModel {
@@ -55,8 +55,8 @@ export class MatchRowVMFactory {
         const isDraw = result === '무';
 
         // 3. 배당 하이라이트 & 결과 색상 결정
-        let resultColor = COLORS.TEXT_PRIMARY;
-        let resultBg = 'transparent';
+        let resultColor: string = NEON_THEME.colors.text.primary;
+        let resultBg: string = 'transparent';
 
         let highlightWinOdd = false;
         let highlightDrawOdd = false;
@@ -72,11 +72,11 @@ export class MatchRowVMFactory {
             // 언더(홈 승리 위치) -> Green
             // 오버(원정 승리 위치) -> Red
             if (result === '언더') {
-                resultColor = COLORS.NEON_GREEN;
-                resultBg = COLORS.SIGNAL_WIN_BG;
+                resultColor = NEON_THEME.colors.neon.green;
+                resultBg = NEON_THEME.domain.signal.winBg;
             } else if (result === '오버') {
-                resultColor = COLORS.NEON_RED;
-                resultBg = COLORS.SIGNAL_LOSE_BG;
+                resultColor = NEON_THEME.colors.neon.red;
+                resultBg = NEON_THEME.domain.signal.loseBg;
             }
         } else {
             // 일반, 핸디캡, 스페셜 등
@@ -85,14 +85,14 @@ export class MatchRowVMFactory {
             highlightDrawOdd = result === '무';
 
             if (highlightWinOdd) {
-                resultColor = COLORS.NEON_GREEN;
-                resultBg = COLORS.SIGNAL_WIN_BG;
+                resultColor = NEON_THEME.colors.neon.green;
+                resultBg = NEON_THEME.domain.signal.winBg;
             } else if (highlightLoseOdd) {
-                resultColor = COLORS.NEON_RED;
-                resultBg = COLORS.SIGNAL_LOSE_BG;
+                resultColor = NEON_THEME.colors.neon.red;
+                resultBg = NEON_THEME.domain.signal.loseBg;
             } else if (highlightDrawOdd) {
-                resultColor = COLORS.NEON_YELLOW;
-                resultBg = COLORS.SIGNAL_DRAW_BG;
+                resultColor = NEON_THEME.colors.neon.yellow;
+                resultBg = NEON_THEME.domain.signal.drawBg;
             }
         }
 

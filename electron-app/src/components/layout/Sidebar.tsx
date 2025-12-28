@@ -1,5 +1,4 @@
-import { COLORS, TYPOGRAPHY } from '../../domain/design/theme';
-import { LAYOUT } from '../../domain/design/layout';
+import { NEON_THEME } from '../../domain/design/designTokens';
 import { TEXTS } from '../../constants/uiTexts';
 
 interface SidebarProps {
@@ -18,30 +17,30 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 
     return (
         <div style={{
-            width: LAYOUT.SIDEBAR_WIDTH,
+            width: NEON_THEME.layout.sidebarWidth,
             height: '100%',
-            backgroundColor: COLORS.SURFACE,
-            borderRight: `1px solid ${COLORS.BORDER}`,
+            backgroundColor: NEON_THEME.colors.bg.surface,
+            borderRight: `1px solid ${NEON_THEME.colors.border.default}`,
             display: 'flex',
             flexDirection: 'column',
         }}>
             {/* Logo Area */}
             <div style={{
-                height: LAYOUT.TOPBAR_HEIGHT,
+                height: NEON_THEME.layout.headerHeight,
                 display: 'flex',
                 alignItems: 'center',
-                padding: '0 24px',
-                borderBottom: `1px solid ${COLORS.BORDER}`,
-                fontWeight: TYPOGRAPHY.WEIGHT.BOLD,
-                fontSize: TYPOGRAPHY.SIZE.XL,
-                color: COLORS.TEXT_PRIMARY,
+                padding: `0 ${NEON_THEME.spacing.xl}`,
+                borderBottom: `1px solid ${NEON_THEME.colors.border.default}`,
+                fontWeight: NEON_THEME.typography.weight.bold,
+                fontSize: NEON_THEME.typography.size.xl,
+                color: NEON_THEME.colors.text.primary,
                 letterSpacing: '0.05em'
             }}>
                 {TEXTS.LAYOUT.LOGO}
             </div>
 
             {/* Menu */}
-            <nav style={{ flex: 1, paddingTop: '20px' }}>
+            <nav style={{ flex: 1, paddingTop: NEON_THEME.spacing.xl }}>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                     {menuItems.map(item => {
                         const isActive = currentPage === item.id;
@@ -50,26 +49,26 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                                 key={item.id}
                                 onClick={() => onNavigate(item.id)}
                                 style={{
-                                    padding: '12px 24px',
+                                    padding: `${NEON_THEME.spacing.md} ${NEON_THEME.spacing.xl}`,
                                     cursor: 'pointer',
-                                    fontSize: TYPOGRAPHY.SIZE.MD,
-                                    color: isActive ? COLORS.NEON_BLUE : COLORS.TEXT_SECONDARY,
-                                    backgroundColor: isActive ? 'rgba(79, 195, 247, 0.08)' : 'transparent',
-                                    fontWeight: isActive ? TYPOGRAPHY.WEIGHT.MEDIUM : TYPOGRAPHY.WEIGHT.REGULAR,
-                                    transition: 'all 0.2s ease',
-                                    borderLeft: isActive ? `3px solid ${COLORS.NEON_BLUE}` : '3px solid transparent',
-                                    boxShadow: isActive ? '0 0 10px rgba(79, 195, 247, 0.2)' : 'none'
+                                    fontSize: NEON_THEME.typography.size.md,
+                                    color: isActive ? NEON_THEME.colors.neon.cyan : NEON_THEME.colors.text.secondary,
+                                    backgroundColor: isActive ? 'rgba(0, 243, 255, 0.08)' : 'transparent',
+                                    fontWeight: isActive ? NEON_THEME.typography.weight.medium : NEON_THEME.typography.weight.regular,
+                                    transition: NEON_THEME.effects.transition.normal,
+                                    borderLeft: isActive ? `3px solid ${NEON_THEME.colors.neon.cyan}` : '3px solid transparent',
+                                    boxShadow: isActive ? NEON_THEME.effects.glow.cyan : 'none'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!isActive) {
-                                        e.currentTarget.style.backgroundColor = 'rgba(79, 195, 247, 0.04)';
-                                        e.currentTarget.style.color = COLORS.TEXT_PRIMARY;
+                                        e.currentTarget.style.backgroundColor = 'rgba(0, 243, 255, 0.04)';
+                                        e.currentTarget.style.color = NEON_THEME.colors.text.primary;
                                     }
                                 }}
                                 onMouseLeave={(e) => {
                                     if (!isActive) {
                                         e.currentTarget.style.backgroundColor = 'transparent';
-                                        e.currentTarget.style.color = COLORS.TEXT_SECONDARY;
+                                        e.currentTarget.style.color = NEON_THEME.colors.text.secondary;
                                     }
                                 }}
                             >
@@ -81,7 +80,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             </nav>
 
             {/* Version Text */}
-            <div style={{ padding: '20px', fontSize: TYPOGRAPHY.SIZE.XS, color: COLORS.TEXT_SECONDARY, opacity: 0.5 }}>
+            <div style={{ padding: NEON_THEME.spacing.xl, fontSize: NEON_THEME.typography.size.xs, color: NEON_THEME.colors.text.secondary, opacity: 0.5 }}>
                 {TEXTS.LAYOUT.VERSION}
             </div>
         </div>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { COLORS } from '../../domain/design/theme';
+import { NEON_THEME } from '../../domain/design/designTokens';
 
 interface AppLayoutProps {
     sidebar: ReactNode;
@@ -13,8 +13,8 @@ export function AppLayout({ sidebar, topbar, children }: AppLayoutProps) {
             display: 'flex',
             height: '100vh',
             width: '100vw',
-            backgroundColor: COLORS.APP_BG,
-            color: COLORS.TEXT_PRIMARY,
+            backgroundColor: NEON_THEME.colors.bg.app,
+            color: NEON_THEME.colors.text.primary,
             overflow: 'hidden'
         }}>
             {/* Sidebar Area */}

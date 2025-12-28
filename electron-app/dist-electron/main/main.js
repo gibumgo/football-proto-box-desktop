@@ -112,3 +112,6 @@ electron_1.ipcMain.handle('crawler:status', async () => {
     const isRunning = pythonRunner ? pythonRunner.isRunning() : false;
     return { isRunning };
 });
+electron_1.ipcMain.on('open-url', (_event, url) => {
+    electron_1.shell.openExternal(url);
+});

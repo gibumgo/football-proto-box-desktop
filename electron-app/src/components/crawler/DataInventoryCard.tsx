@@ -1,5 +1,5 @@
 import React from 'react';
-import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/designSystem';
+import { NEON_THEME } from '../../domain/design/designTokens';
 
 interface DataInventoryCardProps {
     title: string;
@@ -9,28 +9,28 @@ interface DataInventoryCardProps {
 const DataInventoryCard: React.FC<DataInventoryCardProps> = ({ title, children }) => {
     return (
         <div style={{
-            backgroundColor: COLORS.SURFACE,
-            borderRadius: '6px',
-            border: `1px solid ${COLORS.BORDER}`,
-            padding: SPACING.MD,
+            backgroundColor: NEON_THEME.colors.bg.surface,
+            borderRadius: NEON_THEME.layout.radius.md,
+            border: `1px solid ${NEON_THEME.colors.border.default}`,
+            padding: NEON_THEME.spacing.md,
             display: 'flex',
             flexDirection: 'column',
-            gap: SPACING.MD,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            gap: NEON_THEME.spacing.md,
+            boxShadow: NEON_THEME.effects.shadow.sm
         }}>
             <h3 style={{
                 margin: 0,
-                fontSize: TYPOGRAPHY.FONT_SIZE.SM,
-                fontWeight: TYPOGRAPHY.FONT_WEIGHT.BOLD,
-                color: COLORS.TEXT_PRIMARY,
-                borderBottom: `1px solid ${COLORS.BORDER}`,
-                paddingBottom: SPACING.XS,
+                fontSize: NEON_THEME.typography.size.sm,
+                fontWeight: NEON_THEME.typography.weight.bold,
+                color: NEON_THEME.colors.text.primary,
+                borderBottom: `1px solid ${NEON_THEME.colors.border.default}`,
+                paddingBottom: NEON_THEME.spacing.xs,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
             }}>
                 {title}
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.SM }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: NEON_THEME.spacing.sm }}>
                 {children}
             </div>
         </div>
@@ -46,9 +46,9 @@ interface DataRowProps {
 export const DataRow: React.FC<DataRowProps> = ({ label, value, status = 'neutral' }) => {
     const getStatusColor = () => {
         switch (status) {
-            case 'success': return COLORS.NEON_GREEN;
-            case 'warning': return 'orange';
-            case 'error': return COLORS.NEON_RED;
+            case 'success': return NEON_THEME.colors.status.success;
+            case 'warning': return NEON_THEME.colors.status.warning;
+            case 'error': return NEON_THEME.colors.status.error;
             default: return 'transparent';
         }
     };
@@ -58,14 +58,14 @@ export const DataRow: React.FC<DataRowProps> = ({ label, value, status = 'neutra
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            fontSize: TYPOGRAPHY.FONT_SIZE.SM
+            fontSize: NEON_THEME.typography.size.sm
         }}>
-            <span style={{ color: COLORS.TEXT_SECONDARY }}>{label}</span>
+            <span style={{ color: NEON_THEME.colors.text.secondary }}>{label}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{
-                    color: COLORS.TEXT_PRIMARY,
-                    fontWeight: TYPOGRAPHY.FONT_WEIGHT.MEDIUM,
-                    fontFamily: TYPOGRAPHY.FONT_FAMILY.MONO
+                    color: NEON_THEME.colors.text.primary,
+                    fontWeight: NEON_THEME.typography.weight.medium,
+                    fontFamily: NEON_THEME.typography.fontFamily.mono
                 }}>
                     {value}
                 </span>

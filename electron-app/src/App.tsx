@@ -6,7 +6,7 @@ import { TeamProfile } from './pages/TeamProfile';
 import { Match } from './domain/models/match/Match';
 import { MatchMapper } from './domain/mappers/MatchMapper';
 import type { MatchDto } from './types';
-import { COLORS } from './domain/design/theme';
+import { NEON_THEME } from './domain/design/designTokens';
 import { TEXTS } from './constants/uiTexts';
 import './App.css';
 
@@ -115,9 +115,6 @@ function App() {
     setSelectedTeam('');
   };
 
-  // 디버깅
-  console.log('현재 페이지:', currentPage, '데이터 개수:', data.length);
-
   return (
     <AppLayout
       sidebar={
@@ -164,7 +161,7 @@ function App() {
         />
       )}
       {(currentPage === 'tools' || currentPage === 'settings') && (
-        <div style={{ padding: '40px', textAlign: 'center', opacity: 0.5, color: COLORS.TEXT_PRIMARY }}>
+        <div style={{ padding: '40px', textAlign: 'center', opacity: 0.5, color: NEON_THEME.colors.text.primary }}>
           {TEXTS.LAYOUT.WIP}
         </div>
       )}

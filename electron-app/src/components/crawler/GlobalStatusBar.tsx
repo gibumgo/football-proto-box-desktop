@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/designSystem';
+import { NEON_THEME } from '../../domain/design/designTokens';
 import type { DataInventory } from '../../types/crawler';
 
 const GlobalStatusBar: React.FC = () => {
@@ -21,11 +21,11 @@ const GlobalStatusBar: React.FC = () => {
 
     return (
         <div style={{
-            backgroundColor: COLORS.HEADER,
-            borderBottom: `1px solid ${COLORS.BORDER}`,
-            padding: `${SPACING.MD} ${SPACING.XL}`,
+            backgroundColor: NEON_THEME.colors.bg.header,
+            borderBottom: `1px solid ${NEON_THEME.colors.border.default}`,
+            padding: `${NEON_THEME.spacing.md} ${NEON_THEME.spacing.xl}`,
             display: 'flex',
-            gap: SPACING.XXL,
+            gap: NEON_THEME.spacing.xxl,
             alignItems: 'center'
         }}>
             <StatItem label="Total CSV" value={inventory.totalCSV} />
@@ -50,25 +50,25 @@ interface StatItemProps {
 const StatItem: React.FC<StatItemProps> = ({ label, value, subValue }) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
         <div style={{
-            fontSize: TYPOGRAPHY.FONT_SIZE.SM,
-            color: COLORS.TEXT_SECONDARY,
-            fontFamily: TYPOGRAPHY.FONT_FAMILY.SANS
+            fontSize: NEON_THEME.typography.size.sm,
+            color: NEON_THEME.colors.text.secondary,
+            fontFamily: NEON_THEME.typography.fontFamily.sans
         }}>
             {label}
         </div>
         <div style={{
-            fontSize: TYPOGRAPHY.FONT_SIZE.LG,
-            color: COLORS.NEON_CYAN,
-            fontFamily: TYPOGRAPHY.FONT_FAMILY.MONO,
-            fontWeight: TYPOGRAPHY.FONT_WEIGHT.SEMIBOLD
+            fontSize: NEON_THEME.typography.size.lg,
+            color: NEON_THEME.colors.neon.cyan,
+            fontFamily: NEON_THEME.typography.fontFamily.mono,
+            fontWeight: NEON_THEME.typography.weight.bold
         }}>
             {value}
         </div>
         {subValue && (
             <div style={{
-                fontSize: TYPOGRAPHY.FONT_SIZE.XS,
-                color: COLORS.TEXT_MUTED,
-                fontFamily: TYPOGRAPHY.FONT_FAMILY.MONO
+                fontSize: NEON_THEME.typography.size.xs,
+                color: NEON_THEME.colors.text.muted,
+                fontFamily: NEON_THEME.typography.fontFamily.mono
             }}>
                 {subValue}
             </div>
