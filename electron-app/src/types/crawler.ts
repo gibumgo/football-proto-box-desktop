@@ -28,7 +28,12 @@ export interface FlashscoreOptions extends CommonOptions {
     resume?: boolean;
 }
 
-export type CrawlerOptions = BetinfoOptions | FlashscoreOptions;
+export interface MappingOptions extends CommonOptions {
+    mode: 'mapping';
+    task: 'leagues' | 'teams';
+}
+
+export type CrawlerOptions = BetinfoOptions | FlashscoreOptions | MappingOptions;
 
 export interface CrawlerMessage {
     type: 'STATUS' | 'PROGRESS' | 'DATA' | 'CHECKPOINT' | 'ERROR' | 'LOG';

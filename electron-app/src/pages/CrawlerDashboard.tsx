@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import DataInventoryCard, { DataRow } from '../components/crawler/DataInventoryCard';
 import CrawlerControlPanel from '../components/crawler/CrawlerControlPanel';
 import { COLORS, SPACING, TYPOGRAPHY } from '../constants/designSystem';
-import type { CrawlerMessage, BetinfoOptions, FlashscoreOptions } from '../types/crawler';
+import type { CrawlerMessage, BetinfoOptions, FlashscoreOptions, MappingOptions } from '../types/crawler';
 
 export function CrawlerDashboard() {
     const [isRunning, setIsRunning] = useState(false);
@@ -48,7 +48,7 @@ export function CrawlerDashboard() {
         return unsubscribe;
     }, []);
 
-    const handleStart = useCallback(async (options: BetinfoOptions | FlashscoreOptions) => {
+    const handleStart = useCallback(async (options: BetinfoOptions | FlashscoreOptions | MappingOptions) => {
         try {
             setLogs([]);
             setProgress(0);
@@ -165,8 +165,21 @@ export function CrawlerDashboard() {
 
                         {/* 3. Settings Links */}
                         <div style={{ marginTop: 'auto', paddingTop: SPACING.LG }}>
-                            <div style={{ fontSize: '11px', color: COLORS.TEXT_SECONDARY, textAlign: 'center' }}>
-                                Football Proto Box v1.0.0
+                            <div style={{
+                                fontSize: '11px',
+                                color: COLORS.TEXT_SECONDARY,
+                                textAlign: 'center',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px',
+                                padding: '12px',
+                                backgroundColor: 'rgba(0,0,0,0.2)',
+                                borderRadius: '6px'
+                            }}>
+                                <span style={{ color: COLORS.NEON_BLUE, fontWeight: 'bold' }}>DATA STORAGE</span>
+                                <code style={{ fontFamily: TYPOGRAPHY.FONT_FAMILY.MONO, fontSize: '10px' }}>./data</code>
+                                <div style={{ height: '8px' }} />
+                                <div>Football Proto Box v1.0.0</div>
                             </div>
                         </div>
                     </div>

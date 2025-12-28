@@ -1,23 +1,24 @@
 import React, { useState } from 'react';
 import { COLORS, SPACING, TYPOGRAPHY, GLOW_EFFECTS } from '../../constants/designSystem';
-import type { BetinfoOptions, FlashscoreOptions } from '../../types/crawler';
+import { TEXTS } from '../../constants/uiTexts';
+import type { BetinfoOptions, FlashscoreOptions, MappingOptions } from '../../types/crawler';
 
 interface CrawlerControlPanelProps {
-    onStart: (options: BetinfoOptions | FlashscoreOptions) => void;
+    onStart: (options: BetinfoOptions | FlashscoreOptions | MappingOptions) => void;
     onStop: () => void;
     isRunning: boolean;
 }
 
 const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onStop, isRunning }) => {
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-    const [site, setSite] = useState<'betinfo' | 'flashscore'>('betinfo');
+    const [site, setSite] = useState<'betinfo' | 'flashscore' | 'mapping'>('betinfo');
 
     // Config States matching Python config.py defaults
     const [betinfoConfig, setBetinfoConfig] = useState<Partial<BetinfoOptions>>({
         collectionType: 'recent',
         recent: 5,
-        startRound: '2025040',
-        endRound: '2025050',
+        startRound: '040',
+        endRound: '050',
         rounds: '',
         year: new Date().getFullYear()
     });
@@ -27,6 +28,10 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
         season: '2025-2026',
         url: '',
         resume: false
+    });
+
+    const [mappingConfig, setMappingConfig] = useState<Partial<MappingOptions>>({
+        task: 'leagues'
     });
 
     const [advancedConfig, setAdvancedConfig] = useState({
@@ -43,14 +48,14 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
                 ...advancedConfig,
                 collectionType: betinfoConfig.collectionType as any,
                 recent: betinfoConfig.recent,
-                startRound: betinfoConfig.startRound,
-                endRound: betinfoConfig.endRound,
+                startRound: `${betinfoConfig.year}${String(betinfoConfig.startRound).padStart(3, '0')}`,
+                endRound: `${betinfoConfig.year}${String(betinfoConfig.endRound).padStart(3, '0')}`,
                 rounds: betinfoConfig.rounds,
                 year: betinfoConfig.year
             });
-        } else {
+        } else if (site === 'flashscore') {
             if (!flashscoreConfig.url) {
-                alert('URL을 입력해주세요.');
+                alert(TEXTS.CRAWLER.CONTROL_PANEL.MSG_URL_REQUIRED);
                 return;
             }
             onStart({
@@ -60,6 +65,12 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
                 season: flashscoreConfig.season,
                 url: flashscoreConfig.url!,
                 resume: flashscoreConfig.resume
+            });
+        } else {
+            onStart({
+                mode: 'mapping',
+                ...advancedConfig,
+                task: mappingConfig.task as any
             });
         }
     };
@@ -80,31 +91,45 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
                 border: `1px solid ${COLORS.BORDER}`
             }}>
                 <SiteButton
-                    label="Betinfo"
+                    label={TEXTS.CRAWLER.SITE_BETINFO}
                     active={site === 'betinfo'}
                     onClick={() => setSite('betinfo')}
                     disabled={isRunning}
                 />
                 <SiteButton
-                    label="Flashscore"
+                    label={TEXTS.CRAWLER.SITE_FLASHSCORE}
                     active={site === 'flashscore'}
                     onClick={() => setSite('flashscore')}
+                    disabled={isRunning}
+                />
+                <SiteButton
+                    label={TEXTS.CRAWLER.SITE_MAPPING}
+                    active={site === 'mapping'}
+                    onClick={() => setSite('mapping')}
                     disabled={isRunning}
                 />
             </div>
 
             {/* Main Config Form */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.MD }}>
-                {site === 'betinfo' ? (
+                {site === 'betinfo' && (
                     <BetinfoConfigForm
                         config={betinfoConfig}
                         onChange={setBetinfoConfig}
                         disabled={isRunning}
                     />
-                ) : (
+                )}
+                {site === 'flashscore' && (
                     <FlashscoreConfigForm
                         config={flashscoreConfig}
                         onChange={setFlashscoreConfig}
+                        disabled={isRunning}
+                    />
+                )}
+                {site === 'mapping' && (
+                    <MappingConfigForm
+                        config={mappingConfig}
+                        onChange={setMappingConfig}
                         disabled={isRunning}
                     />
                 )}
@@ -128,7 +153,7 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
                         fontWeight: TYPOGRAPHY.FONT_WEIGHT.MEDIUM
                     }}
                 >
-                    <span>고급 설정</span>
+                    <span>{TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED_SETTINGS}</span>
                     <span style={{ fontSize: '10px', transform: isAdvancedOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
                 </button>
 
@@ -162,7 +187,7 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
                         boxShadow: isRunning ? 'none' : GLOW_EFFECTS.NEON_BLUE
                     }}
                 >
-                    {isRunning ? '실행 중...' : '크롤링 시작'}
+                    {isRunning ? TEXTS.CRAWLER.CONTROL_PANEL.BTN_RUNNING : TEXTS.CRAWLER.CONTROL_PANEL.BTN_START}
                 </button>
 
                 {isRunning && (
@@ -181,7 +206,7 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
                             opacity: 0.9
                         }}
                     >
-                        중지
+                        {TEXTS.CRAWLER.CONTROL_PANEL.BTN_STOP}
                     </button>
                 )}
             </div>
@@ -214,15 +239,25 @@ const SiteButton = ({ label, active, onClick, disabled }: any) => (
 
 const BetinfoConfigForm = ({ config, onChange, disabled }: any) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.LG }}>
-        <RadioGroup label="수집 범위">
+        <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_YEAR}>
+            <input
+                type="number"
+                value={config.year}
+                onChange={(e) => onChange({ ...config, year: parseInt(e.target.value) })}
+                disabled={disabled}
+                style={{ ...inputStyle, maxWidth: '120px' }}
+            />
+        </FormField>
+
+        <RadioGroup label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_COLLECTION_TYPE}>
             <RadioButton
-                label="최신 회차"
+                label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.TYPE_RECENT}
                 checked={config.collectionType === 'recent'}
                 onClick={() => onChange({ ...config, collectionType: 'recent' })}
                 disabled={disabled}
             />
             <RadioButton
-                label="구간 지정"
+                label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.TYPE_RANGE}
                 checked={config.collectionType === 'range'}
                 onClick={() => onChange({ ...config, collectionType: 'range' })}
                 disabled={disabled}
@@ -230,7 +265,7 @@ const BetinfoConfigForm = ({ config, onChange, disabled }: any) => (
         </RadioGroup>
 
         {config.collectionType === 'recent' ? (
-            <FormField label="수집할 회차 수">
+            <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_RECENT_COUNT}>
                 <input
                     type="number"
                     value={config.recent}
@@ -241,63 +276,69 @@ const BetinfoConfigForm = ({ config, onChange, disabled }: any) => (
             </FormField>
         ) : (
             <div style={{ display: 'flex', gap: SPACING.SM }}>
-                <FormField label="시작 (YYYYRRR)">
+                <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_START_ROUND}>
                     <input
                         type="text"
+                        maxLength={3}
                         value={config.startRound}
-                        onChange={(e) => onChange({ ...config, startRound: e.target.value })}
+                        onChange={(e) => onChange({ ...config, startRound: e.target.value.replace(/[^0-9]/g, '') })}
                         disabled={disabled}
                         style={inputStyle}
-                        placeholder="2025040"
+                        placeholder={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.PLACEHOLDER_START_ROUND}
                     />
                 </FormField>
-                <FormField label="종료 (YYYYRRR)">
+                <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_END_ROUND}>
                     <input
                         type="text"
+                        maxLength={3}
                         value={config.endRound}
-                        onChange={(e) => onChange({ ...config, endRound: e.target.value })}
+                        onChange={(e) => onChange({ ...config, endRound: e.target.value.replace(/[^0-9]/g, '') })}
                         disabled={disabled}
                         style={inputStyle}
-                        placeholder="2025050"
+                        placeholder={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.PLACEHOLDER_END_ROUND}
                     />
                 </FormField>
             </div>
         )}
 
-        <FormField label="대상 연도">
-            <input
-                type="number"
-                value={config.year}
-                onChange={(e) => onChange({ ...config, year: parseInt(e.target.value) })}
-                disabled={disabled}
-                style={{ ...inputStyle, maxWidth: '120px' }}
-            />
-        </FormField>
+
     </div>
 );
 
 const FlashscoreConfigForm = ({ config, onChange, disabled }: any) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.LG }}>
-        <FormField label="작업 유형">
+        <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_TASK_TYPE}>
             <select
                 value={config.task}
                 onChange={(e) => onChange({ ...config, task: e.target.value })}
                 disabled={disabled}
                 style={inputStyle}
             >
-                <option value="metadata">메타데이터 (순위/팀)</option>
-                <option value="matches">경기 결과</option>
+                <option value="metadata">{TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.TYPE_METADATA}</option>
+                <option value="matches">{TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.TYPE_MATCHES}</option>
             </select>
         </FormField>
 
-        <FormField label="타겟 URL (Flashscore.co.kr)">
+        <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_TARGET_URL}>
             <input
                 type="text"
                 value={config.url}
-                onChange={(e) => onChange({ ...config, url: e.target.value })}
+                onChange={(e) => {
+                    const newUrl = e.target.value;
+                    let updates: any = { url: newUrl };
+
+                    // 자동 시즌 감지 로직 (Smart Season)
+                    // 예: ...-2024-2025/... -> 24-25
+                    const seasonMatch = newUrl.match(/-(\d{2})(\d{2})-(\d{2})(\d{2})\//);
+                    if (seasonMatch) {
+                        updates.season = `${seasonMatch[2]}-${seasonMatch[4]}`;
+                    }
+
+                    onChange({ ...config, ...updates });
+                }}
                 disabled={disabled}
                 style={inputStyle}
-                placeholder="https://www.flashscore.co.kr/..."
+                placeholder={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.PLACEHOLDER_TARGET_URL}
             />
             <div style={{
                 marginTop: '6px',
@@ -305,19 +346,64 @@ const FlashscoreConfigForm = ({ config, onChange, disabled }: any) => (
                 color: COLORS.TEXT_SECONDARY,
                 lineHeight: '1.4',
                 backgroundColor: 'rgba(0,0,0,0.2)',
-                padding: '6px',
-                borderRadius: '4px'
+                padding: '8px',
+                borderRadius: '4px',
+                borderLeft: `2px solid ${COLORS.NEON_BLUE}`
             }}>
                 {config.task === 'metadata' ? (
-                    <>예시: https://www.flashscore.co.kr/soccer/england/premier-league/standings/#/OEEq9Yvp/standings/overall/</>
+                    <>
+                        <strong style={{ color: COLORS.NEON_BLUE }}>{TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_METADATA_TITLE}</strong><br />
+                        {TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_METADATA_DESC}<br />
+                        {TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_METADATA_EX}
+                    </>
                 ) : (
-                    <>예시: https://www.flashscore.co.kr/soccer/england/premier-league/results/</>
+                    <>
+                        <strong style={{ color: COLORS.NEON_BLUE }}>{TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_MATCHES_TITLE}</strong><br />
+                        {TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_MATCHES_DESC}<br />
+                        {TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.GUIDE_MATCHES_EX}
+                    </>
                 )}
             </div>
         </FormField>
 
-        {config.task === 'matches' && (
-            <FormField label="시즌 (예: 2025-2026)">
+        {config.task === 'matches' ? (
+            <div style={{ display: 'flex', gap: SPACING.SM }}>
+                <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_SEASON}>
+                    <input
+                        type="text"
+                        value={config.season}
+                        onChange={(e) => onChange({ ...config, season: e.target.value })}
+                        disabled={disabled}
+                        style={inputStyle}
+                    />
+                </FormField>
+                <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_START_ROUND}>
+                    <input
+                        type="number"
+                        min="1"
+                        max="38"
+                        value={config.fsStartRound || ''}
+                        onChange={(e) => onChange({ ...config, fsStartRound: parseInt(e.target.value) })}
+                        disabled={disabled}
+                        style={inputStyle}
+                        placeholder={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.PLACEHOLDER_START_ROUND}
+                    />
+                </FormField>
+                <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_END_ROUND}>
+                    <input
+                        type="number"
+                        min="1"
+                        max="38"
+                        value={config.fsEndRound || ''}
+                        onChange={(e) => onChange({ ...config, fsEndRound: parseInt(e.target.value) })}
+                        disabled={disabled}
+                        style={inputStyle}
+                        placeholder={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.PLACEHOLDER_END_ROUND}
+                    />
+                </FormField>
+            </div>
+        ) : (
+            <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.LABEL_SEASON}>
                 <input
                     type="text"
                     value={config.season}
@@ -329,7 +415,7 @@ const FlashscoreConfigForm = ({ config, onChange, disabled }: any) => (
         )}
 
         <Checkbox
-            label="중단된 지점부터 이어하기 (Resume)"
+            label={TEXTS.CRAWLER.CONTROL_PANEL.FLASHSCORE.CHECKBOX_RESUME}
             checked={config.resume}
             onChange={(checked: boolean) => onChange({ ...config, resume: checked })}
             disabled={disabled}
@@ -340,20 +426,20 @@ const FlashscoreConfigForm = ({ config, onChange, disabled }: any) => (
 const AdvancedConfigForm = ({ config, onChange, disabled }: any) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.MD }}>
         <Checkbox
-            label="헤드리스 모드 (브라우저 숨김)"
+            label={TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED.CHECKBOX_HEADLESS}
             checked={config.headless}
             onChange={(checked: boolean) => onChange({ ...config, headless: checked })}
             disabled={disabled}
         />
 
         <Checkbox
-            label="디버그 로그 출력"
+            label={TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED.CHECKBOX_DEBUG}
             checked={config.debug}
             onChange={(checked: boolean) => onChange({ ...config, debug: checked })}
             disabled={disabled}
         />
 
-        <FormField label="타임아웃 (초)">
+        <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED.LABEL_TIMEOUT}>
             <input
                 type="number"
                 value={config.timeout}
@@ -363,7 +449,7 @@ const AdvancedConfigForm = ({ config, onChange, disabled }: any) => (
             />
         </FormField>
 
-        <FormField label="데이터 저장 경로">
+        <FormField label={TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED.LABEL_OUTPUT_DIR}>
             <input
                 type="text"
                 value={config.outputDir}
@@ -372,6 +458,47 @@ const AdvancedConfigForm = ({ config, onChange, disabled }: any) => (
                 style={inputStyle}
             />
         </FormField>
+    </div>
+);
+
+const MappingConfigForm = ({ config, onChange, disabled }: any) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.LG }}>
+        <RadioGroup label={TEXTS.CRAWLER.CONTROL_PANEL.MAPPING.LABEL_DESCRIPTION}>
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                padding: '12px',
+                backgroundColor: 'rgba(0,0,0,0.2)',
+                borderRadius: '6px',
+                borderLeft: `2px solid ${COLORS.NEON_CYAN}`,
+                fontSize: '12px',
+                color: COLORS.TEXT_SECONDARY
+            }}>
+                {config.task === 'leagues' ? (
+                    <span>{TEXTS.CRAWLER.CONTROL_PANEL.MAPPING.DESC_MAP_LEAGUES}</span>
+                ) : (
+                    <span>{TEXTS.CRAWLER.CONTROL_PANEL.MAPPING.DESC_MAP_TEAMS}</span>
+                )}
+            </div>
+        </RadioGroup>
+
+        <RadioGroup label="Mapping Task">
+            <div style={{ display: 'flex', gap: SPACING.LG }}>
+                <RadioButton
+                    label={TEXTS.CRAWLER.CONTROL_PANEL.MAPPING.BTN_MAP_LEAGUES}
+                    checked={config.task === 'leagues'}
+                    onClick={() => onChange({ ...config, task: 'leagues' })}
+                    disabled={disabled}
+                />
+                <RadioButton
+                    label={TEXTS.CRAWLER.CONTROL_PANEL.MAPPING.BTN_MAP_TEAMS}
+                    checked={config.task === 'teams'}
+                    onClick={() => onChange({ ...config, task: 'teams' })}
+                    disabled={disabled}
+                />
+            </div>
+        </RadioGroup>
     </div>
 );
 
