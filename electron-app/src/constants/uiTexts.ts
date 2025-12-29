@@ -65,7 +65,8 @@ export const TEXTS = {
                 PLACEHOLDER_START_ROUND: '040',
                 LABEL_END_ROUND: '종료 회차',
                 PLACEHOLDER_END_ROUND: '050',
-                LABEL_YEAR: '대상 연도'
+                LABEL_YEAR: '대상 연도',
+                LABEL_SKIP_EXISTING: '기존 파일 존재 시 수집 건너뛰기'
             },
 
             FLASHSCORE: {

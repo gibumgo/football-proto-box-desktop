@@ -9,6 +9,7 @@ export function useBetinfoForm(initialConfig: Partial<BetinfoOptions>) {
         endRound: '050',
         rounds: '',
         year: new Date().getFullYear(),
+        skipExisting: true, // 기본값 true로 설정
         ...initialConfig
     });
 
@@ -26,6 +27,10 @@ export function useBetinfoForm(initialConfig: Partial<BetinfoOptions>) {
 
     const handleRecentCountChange = useCallback((count: number) => {
         updateConfig({ recent: count });
+    }, [updateConfig]);
+
+    const handleSkipExistingChange = useCallback((skip: boolean) => {
+        updateConfig({ skipExisting: skip });
     }, [updateConfig]);
 
     const handleStartRoundChange = useCallback((round: string) => {
@@ -48,7 +53,8 @@ export function useBetinfoForm(initialConfig: Partial<BetinfoOptions>) {
             handleCollectionTypeChange,
             handleRecentCountChange,
             handleStartRoundChange,
-            handleEndRoundChange
+            handleEndRoundChange,
+            handleSkipExistingChange
         }
     };
 }

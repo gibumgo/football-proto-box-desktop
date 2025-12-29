@@ -51,12 +51,17 @@ export function useCrawler() {
             if (!window.api) throw new Error('API not available');
             setLogs([]);
             setProgress(0);
-            await window.api.crawler.start(options);
             setIsRunning(true);
             setLogs(prev => [...prev, `System: Starting crawler (${options.mode})...`]);
+            
+            await window.api.crawler.start(options);
+            
+            setIsRunning(false);
+            setLogs(prev => [...prev, 'System: Crawler finished successfully.']);
         } catch (error) {
             console.error('Failed to start crawler:', error);
-            setLogs(prev => [...prev, `[ERROR] Failed to start: ${error}`]);
+            setIsRunning(false);
+            setLogs(prev => [...prev, `[ERROR] Failed to start or interrupted: ${error}`]);
         }
     }, []);
 
@@ -64,8 +69,9 @@ export function useCrawler() {
         try {
             if (!window.api) throw new Error('API not available');
             await window.api.crawler.stop();
+            // isRunning will be set to false by the startCrawler's catch block or by explicit call
             setIsRunning(false);
-            setLogs(prev => [...prev, 'System: Crawler stopped.']);
+            setLogs(prev => [...prev, 'System: Crawler stopped by user.']);
         } catch (error) {
             console.error('Failed to stop crawler:', error);
             setLogs(prev => [...prev, `[ERROR] Failed to stop: ${error}`]);

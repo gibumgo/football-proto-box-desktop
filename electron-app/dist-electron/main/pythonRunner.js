@@ -97,6 +97,9 @@ class PythonRunner {
             else if (opts.collectionType === 'rounds' && opts.rounds) {
                 args.push('--rounds', opts.rounds);
             }
+            if (opts.skipExisting) {
+                args.push('--skip-existing');
+            }
         }
         // 3. Flashscore Options
         else if (options.mode === 'flashscore') {

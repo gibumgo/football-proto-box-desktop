@@ -3,6 +3,7 @@ import type { BetinfoOptions } from '@/types/crawler';
 import { TEXTS } from '@/constants/uiTexts';
 import { Input } from '@/components/ui/Input';
 import { RadioGroup } from '@/components/ui/RadioGroup';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { NEON_THEME } from '@/domain/design/designTokens';
 
 interface BetinfoConfigFormProps {
@@ -14,6 +15,7 @@ interface BetinfoConfigFormProps {
         handleRecentCountChange: (count: number) => void;
         handleStartRoundChange: (round: string) => void;
         handleEndRoundChange: (round: string) => void;
+        handleSkipExistingChange: (skip: boolean) => void;
     };
     disabled?: boolean;
 }
@@ -81,6 +83,15 @@ export const BetinfoConfigForm: React.FC<BetinfoConfigFormProps> = ({ config, ha
                     />
                 </div>
             )}
+
+            <div style={styles.formGroup}>
+                <Checkbox
+                    label={TEXTS.CRAWLER.CONTROL_PANEL.BETINFO.LABEL_SKIP_EXISTING}
+                    checked={config.skipExisting || false}
+                    onChange={handlers.handleSkipExistingChange}
+                    disabled={disabled}
+                />
+            </div>
         </div>
     );
 };

@@ -268,25 +268,24 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: NEON_THEME.spacing.sm, marginTop: NEON_THEME.spacing.xs }}>
-                {!isRunning ? (
-                    <Button
-                        variant="primary"
-                        fullWidth
-                        onClick={handleStart}
-                        style={{ height: '40px', fontSize: '14px' }}
-                    >
-                        {TEXTS.CRAWLER.CONTROL_PANEL.BTN_START}
-                    </Button>
-                ) : (
-                    <Button
-                        variant="danger"
-                        fullWidth
-                        onClick={onStop}
-                        style={{ height: '40px', fontSize: '14px' }}
-                    >
-                        {TEXTS.CRAWLER.CONTROL_PANEL.BTN_STOP}
-                    </Button>
-                )}
+                <Button
+                    variant="primary"
+                    fullWidth
+                    onClick={handleStart}
+                    disabled={isRunning}
+                    style={{ height: '40px', fontSize: '14px' }}
+                >
+                    {TEXTS.CRAWLER.CONTROL_PANEL.BTN_START}
+                </Button>
+                <Button
+                    variant="danger"
+                    fullWidth
+                    onClick={onStop}
+                    disabled={!isRunning}
+                    style={{ height: '40px', fontSize: '14px' }}
+                >
+                    {TEXTS.CRAWLER.CONTROL_PANEL.BTN_STOP}
+                </Button>
             </div>
 
             <style>

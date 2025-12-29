@@ -15,6 +15,7 @@ export interface BetinfoOptions extends CommonOptions {
     startRound?: string; // Changed to string to match CLI
     endRound?: string;   // Changed to string to match CLI
     rounds?: string;     // Comma separated string
+    skipExisting?: boolean;
 }
 
 export interface FlashscoreOptions extends CommonOptions {
