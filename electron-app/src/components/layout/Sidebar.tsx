@@ -9,7 +9,12 @@ interface SidebarProps {
 export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     const menuItems = [
         { id: 'dashboard', label: TEXTS.LAYOUT.MENU.DASHBOARD },
+        { id: 'leagues', label: TEXTS.LAYOUT.MENU.LEAGUES },
         { id: 'matches', label: TEXTS.LAYOUT.MENU.ANALYSIS },
+        { id: 'favorites', label: TEXTS.LAYOUT.MENU.FAVORITES },
+        { id: 'strategy', label: TEXTS.LAYOUT.MENU.STRATEGY },
+        { id: 'odds-flow', label: TEXTS.LAYOUT.MENU.ODDS_FLOW },
+        { id: 'archive', label: TEXTS.LAYOUT.MENU.ARCHIVE },
         { id: 'crawler', label: TEXTS.LAYOUT.MENU.CRAWLER },
         { id: 'tools', label: TEXTS.LAYOUT.MENU.TOOLS },
         { id: 'settings', label: TEXTS.LAYOUT.MENU.SETTINGS },

@@ -15,7 +15,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
 
-type Page = 'dashboard' | 'matches' | 'crawler' | 'team-profile' | 'tools' | 'settings';
+type Page = 'dashboard' | 'leagues' | 'matches' | 'favorites' | 'strategy' | 'odds-flow' | 'archive' | 'crawler' | 'team-profile' | 'tools' | 'settings';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -160,7 +160,7 @@ function App() {
           onBack={handleBackToMatches}
         />
       )}
-      {(currentPage === 'tools' || currentPage === 'settings') && (
+      {(currentPage === 'tools' || currentPage === 'settings' || currentPage === 'leagues' || currentPage === 'favorites' || currentPage === 'strategy' || currentPage === 'odds-flow' || currentPage === 'archive') && (
         <div style={{ padding: '40px', textAlign: 'center', opacity: 0.5, color: NEON_THEME.colors.text.primary }}>
           {TEXTS.LAYOUT.WIP}
         </div>

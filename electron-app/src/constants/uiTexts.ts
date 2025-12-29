@@ -5,7 +5,12 @@ export const TEXTS = {
         VERSION: 'v0.1.0 Alpha',
         MENU: {
             DASHBOARD: 'Dashboard',
+            LEAGUES: '리그 대시보드',
             ANALYSIS: 'Analysis',
+            FAVORITES: '즐겨찾기',
+            STRATEGY: '전략 연구소',
+            ODDS_FLOW: '배당 흐름',
+            ARCHIVE: '아카이브',
             CRAWLER: 'Crawler Manager',
             TOOLS: 'Tools',
             SETTINGS: 'Settings'
