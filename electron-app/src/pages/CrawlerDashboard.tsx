@@ -1,11 +1,17 @@
+import { useState } from 'react';
 import CrawlerControlPanel from '@/components/crawler/CrawlerControlPanel';
 import { NEON_THEME } from '@/domain/design/designTokens';
 import { TerminalWindow } from '@/components/crawler/TerminalWindow';
+import { DataManagementPanel } from '@/components/crawler/DataManagementPanel';
 import { useCrawler } from '@/hooks/useCrawler';
 import { MetricCard } from '@/components/crawler/MetricCard';
 
 export function CrawlerDashboard() {
-    const { isRunning, logs, progress, startCrawler, stopCrawler } = useCrawler();
+    const { isRunning, logs, progress, outputDir, startCrawler, stopCrawler, updateOutputDir } = useCrawler();
+    const [activeMode, setActiveMode] = useState<'betinfo' | 'flashscore' | 'mapping'>('betinfo');
+
+    // Check if we are in data management mode
+    const isDataMode = activeMode === 'mapping';
 
     return (
         // [Window Background: Deep Void]
@@ -46,6 +52,10 @@ export function CrawlerDashboard() {
                         onStart={startCrawler}
                         onStop={stopCrawler}
                         isRunning={isRunning}
+                        outputDir={outputDir}
+                        onUpdateOutputDir={updateOutputDir}
+                        activeMode={activeMode}
+                        onModeChange={setActiveMode}
                     />
                 </div>
 
@@ -107,71 +117,77 @@ export function CrawlerDashboard() {
                 </div>
             </div>
 
-            {/* [Right Column] - Split into Stats & Console */}
-            <div style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px', // Gap between Stats and Console
-                overflow: 'hidden'
-            }}>
-                {/* [1. Stats Deck] - Top Module */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: NEON_THEME.spacing.lg,
-                    padding: NEON_THEME.spacing.xl,
-                    backgroundColor: NEON_THEME.colors.bg.panel,
-                    borderRadius: '16px',
-                    border: `1px solid ${NEON_THEME.colors.border.default}`,
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                    minHeight: '140px', // Anchor height
-                    alignContent: 'center'
-                }}>
-                    <MetricCard title="Total Matches" value={logs.length.toString()} unit="games" accent="cyan" />
-                    <MetricCard title="Success Rate" value="98.5" unit="%" accent="green" />
-                    <MetricCard title="Parsing Speed" value="142" unit="ms/item" accent="yellow" />
-                </div>
-
-                {/* [2. Command Console] - Bottom Module */}
+            {/* [Right Column] - Split into Stats & Console OR Data Management Panel */}
+            {isDataMode ? (
+                // [Mode: Data Management]
+                <DataManagementPanel />
+            ) : (
+                // [Mode: Crawler Terminal]
                 <div style={{
                     flex: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    backgroundColor: '#000000', // Pure black for console feel
-                    borderRadius: '16px',
-                    border: `1px solid ${NEON_THEME.colors.border.default}`,
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                    overflow: 'hidden',
-                    position: 'relative' // For visual anchoring
+                    gap: '16px', // Gap between Stats and Console
+                    overflow: 'hidden'
                 }}>
-                    {/* Console Header */}
+                    {/* [1. Stats Deck] - Top Module */}
                     <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: `${NEON_THEME.spacing.md} ${NEON_THEME.spacing.xl}`,
-                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                        borderBottom: `1px solid ${NEON_THEME.colors.border.subtle}`
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: NEON_THEME.spacing.lg,
+                        padding: NEON_THEME.spacing.xl,
+                        backgroundColor: NEON_THEME.colors.bg.panel,
+                        borderRadius: '16px',
+                        border: `1px solid ${NEON_THEME.colors.border.default}`,
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                        minHeight: '140px', // Anchor height
+                        alignContent: 'center'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: NEON_THEME.colors.neon.green, boxShadow: `0 0 5px ${NEON_THEME.colors.neon.green}` }} />
-                            <span style={{ fontSize: '12px', fontWeight: 600, color: NEON_THEME.colors.text.secondary, letterSpacing: '1px' }}>
-                                LIVE TERMINAL
-                            </span>
-                        </div>
-                        <span style={{ fontSize: '11px', color: NEON_THEME.colors.text.disabled }}>bash-3.2$ tail -f crawl.log</span>
+                        <MetricCard title="Total Matches" value={logs.length.toString()} unit="games" accent="cyan" />
+                        <MetricCard title="Success Rate" value="98.5" unit="%" accent="green" />
+                        <MetricCard title="Parsing Speed" value="142" unit="ms/item" accent="yellow" />
                     </div>
 
-                    {/* Console Body */}
-                    <div style={{ flex: 1, overflow: 'hidden', padding: NEON_THEME.spacing.lg }}>
-                        <TerminalWindow
-                            logs={logs}
-                            progress={progress}
-                        />
+                    {/* [2. Command Console] - Bottom Module */}
+                    <div style={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        backgroundColor: '#000000', // Pure black for console feel
+                        borderRadius: '16px',
+                        border: `1px solid ${NEON_THEME.colors.border.default}`,
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                        overflow: 'hidden',
+                        position: 'relative' // For visual anchoring
+                    }}>
+                        {/* Console Header */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: `${NEON_THEME.spacing.md} ${NEON_THEME.spacing.xl}`,
+                            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                            borderBottom: `1px solid ${NEON_THEME.colors.border.subtle}`
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: NEON_THEME.colors.neon.green, boxShadow: `0 0 5px ${NEON_THEME.colors.neon.green}` }} />
+                                <span style={{ fontSize: '12px', fontWeight: 600, color: NEON_THEME.colors.text.secondary, letterSpacing: '1px' }}>
+                                    LIVE TERMINAL
+                                </span>
+                            </div>
+                            <span style={{ fontSize: '11px', color: NEON_THEME.colors.text.disabled }}>bash-3.2$ tail -f crawl.log</span>
+                        </div>
+
+                        {/* Console Body */}
+                        <div style={{ flex: 1, overflow: 'hidden', padding: NEON_THEME.spacing.lg }}>
+                            <TerminalWindow
+                                logs={logs}
+                                progress={progress}
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

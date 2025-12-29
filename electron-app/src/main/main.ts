@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import path from 'path';
 import { spawn } from 'child_process';
 import { PythonRunner } from './pythonRunner';
@@ -124,4 +124,130 @@ ipcMain.handle('crawler:status', async () => {
 });
 ipcMain.on('open-url', (_event, url: string) => {
     shell.openExternal(url);
+});
+
+import fs from 'fs';
+
+// Project Root (football-proto-box-desktop)
+// __dirname is electron-app/dist/main or similar. We need to go up to the project root.
+// Assuming structure: /project/electron-app/dist/main -> ../../../
+const PROJECT_ROOT = path.resolve(__dirname, '../../..');
+
+// System Utilities
+ipcMain.handle('system:select-directory', async () => {
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory', 'createDirectory']
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+        return result.filePaths[0];
+    }
+    return null;
+});
+
+ipcMain.handle('system:open-path', async (_event, targetPath: string) => {
+    try {
+        let absolutePath = targetPath;
+        if (!path.isAbsolute(targetPath)) {
+            absolutePath = path.resolve(PROJECT_ROOT, targetPath);
+        }
+
+        if (!fs.existsSync(absolutePath)) {
+            fs.mkdirSync(absolutePath, { recursive: true });
+        }
+
+        await shell.openPath(absolutePath);
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: e };
+    }
+});
+
+ipcMain.handle('system:resolve-path', async (_event, targetPath: string) => {
+    try {
+        if (path.isAbsolute(targetPath)) {
+            return targetPath;
+        }
+        return path.resolve(PROJECT_ROOT, targetPath);
+    } catch (e) {
+        console.error('Failed to resolve path:', e);
+        return targetPath;
+    }
+});
+
+// Data Management IPC Handlers
+ipcMain.handle('data:read-file', async (_event, filePath: string) => {
+    try {
+        let absolutePath = filePath;
+        if (!path.isAbsolute(filePath)) {
+            absolutePath = path.resolve(PROJECT_ROOT, filePath);
+        }
+
+        if (!fs.existsSync(absolutePath)) {
+            return { success: false, error: 'File not found' };
+        }
+
+        const content = fs.readFileSync(absolutePath, 'utf8');
+
+        // Auto-parse JSON
+        if (absolutePath.endsWith('.json')) {
+            try {
+                return { success: true, data: JSON.parse(content) };
+            } catch (e) {
+                return { success: false, error: 'Failed to parse JSON', raw: content };
+            }
+        }
+
+        return { success: true, data: content };
+    } catch (e) {
+        return { success: false, error: e };
+    }
+});
+
+ipcMain.handle('data:write-file', async (_event, filePath: string, content: string | object) => {
+    try {
+        let absolutePath = filePath;
+        if (!path.isAbsolute(filePath)) {
+            absolutePath = path.resolve(PROJECT_ROOT, filePath);
+        }
+
+        // Ensure directory exists
+        const dir = path.dirname(absolutePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        const dataToWrite = typeof content === 'object' ? JSON.stringify(content, null, 2) : content;
+        fs.writeFileSync(absolutePath, dataToWrite, 'utf8');
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: e };
+    }
+});
+
+ipcMain.handle('data:list-directory', async (_event, dirPath: string) => {
+    try {
+        let absolutePath = dirPath;
+        if (!path.isAbsolute(dirPath)) {
+            absolutePath = path.resolve(PROJECT_ROOT, dirPath);
+        }
+
+        if (!fs.existsSync(absolutePath)) {
+            return { success: true, files: [] }; // Return empty if dir doesn't exist yet
+        }
+
+        const files = fs.readdirSync(absolutePath).map(file => {
+            const stats = fs.statSync(path.join(absolutePath, file));
+            return {
+                name: file,
+                isDirectory: stats.isDirectory(),
+                size: stats.size,
+                mtime: stats.mtime
+            };
+        });
+
+        return { success: true, files };
+    } catch (e) {
+        return { success: false, error: e };
+    }
 });

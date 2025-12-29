@@ -6,9 +6,8 @@ export function useAdvancedForm(initialConfig: Partial<AdvancedOptions>) {
         headless: true,
         debug: false,
         timeout: 300,
-        outputDir: './data',
         ...initialConfig
-    });
+    } as AdvancedOptions);
 
     const updateConfig = useCallback((updates: Partial<AdvancedOptions>) => {
         setConfig(prev => ({ ...prev, ...updates }));
@@ -26,18 +25,13 @@ export function useAdvancedForm(initialConfig: Partial<AdvancedOptions>) {
         updateConfig({ timeout });
     }, [updateConfig]);
 
-    const handleOutputDirChange = useCallback((outputDir: string) => {
-        updateConfig({ outputDir });
-    }, [updateConfig]);
-
     return {
         config,
         updateConfig,
         handlers: {
             handleHeadlessChange,
             handleDebugChange,
-            handleTimeoutChange,
-            handleOutputDirChange
+            handleTimeoutChange
         }
     };
 }

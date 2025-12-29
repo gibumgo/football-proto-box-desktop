@@ -15,5 +15,15 @@ electron_1.contextBridge.exposeInMainWorld('api', {
         }
     },
     // Utils
-    openExternal: (url) => electron_1.ipcRenderer.send('open-url', url)
+    openExternal: (url) => electron_1.ipcRenderer.send('open-url', url),
+    system: {
+        selectDirectory: () => electron_1.ipcRenderer.invoke('system:select-directory'),
+        openPath: (path) => electron_1.ipcRenderer.invoke('system:open-path', path),
+        resolvePath: (path) => electron_1.ipcRenderer.invoke('system:resolve-path', path)
+    },
+    data: {
+        readFile: (path) => electron_1.ipcRenderer.invoke('data:read-file', path),
+        writeFile: (path, content) => electron_1.ipcRenderer.invoke('data:write-file', path, content),
+        listDirectory: (path) => electron_1.ipcRenderer.invoke('data:list-directory', path)
+    }
 });

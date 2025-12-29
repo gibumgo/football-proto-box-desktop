@@ -11,7 +11,6 @@ interface AdvancedConfigFormProps {
         handleHeadlessChange: (checked: boolean) => void;
         handleDebugChange: (checked: boolean) => void;
         handleTimeoutChange: (timeout: number) => void;
-        handleOutputDirChange: (dir: string) => void;
     };
     disabled?: boolean;
 }
@@ -40,15 +39,6 @@ export const AdvancedConfigForm: React.FC<AdvancedConfigFormProps> = ({ config, 
                 onChange={(e) => handlers.handleTimeoutChange(parseInt(e.target.value))}
                 disabled={disabled}
                 style={styles.inputShort}
-            />
-
-            <Input
-                label={TEXTS.CRAWLER.CONTROL_PANEL.ADVANCED.LABEL_OUTPUT_DIR}
-                type="text"
-                value={config.outputDir}
-                onChange={(e) => handlers.handleOutputDirChange(e.target.value)}
-                disabled={disabled}
-                fullWidth
             />
         </div>
     );

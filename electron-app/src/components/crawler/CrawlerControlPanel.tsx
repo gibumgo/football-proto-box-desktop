@@ -20,11 +20,23 @@ interface CrawlerControlPanelProps {
     onStart: (options: BetinfoOptions | FlashscoreOptions | MappingOptions) => void;
     onStop: () => void;
     isRunning: boolean;
+    outputDir: string;
+    onUpdateOutputDir: (path: string) => void;
+    activeMode: 'betinfo' | 'flashscore' | 'mapping';
+    onModeChange: (mode: 'betinfo' | 'flashscore' | 'mapping') => void;
 }
 
-const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onStop, isRunning }) => {
+const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({
+    onStart,
+    onStop,
+    isRunning,
+    outputDir,
+    onUpdateOutputDir,
+    activeMode,
+    onModeChange
+}) => {
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-    const [site, setSite] = useState<'betinfo' | 'flashscore' | 'mapping'>('betinfo');
+    // Removed internal site state, using activeMode prop instead
 
     // 1. Betinfo Config (New Hook Pattern)
     const {
@@ -65,31 +77,44 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
     } = useAdvancedForm({
         headless: true,
         debug: false,
-        timeout: 300,
-        outputDir: './data'
+        timeout: 300
     });
 
+    const handleSelectDir = async () => {
+        const path = await (window.api as any).system.selectDirectory();
+        if (path) onUpdateOutputDir(path);
+    };
+
+    const handleOpenDir = async () => {
+        await (window.api as any).system.openPath(outputDir);
+    };
+
     const handleStart = () => {
-        if (site === 'betinfo') {
+        const commonOptions = {
+            ...advancedConfig,
+            outputDir: outputDir
+        };
+
+        if (activeMode === 'betinfo') {
             onStart({
                 mode: 'betinfo',
-                ...advancedConfig,
+                ...commonOptions,
                 collectionType: betinfoConfig.collectionType as any,
                 recent: betinfoConfig.recent,
                 startRound: `${betinfoConfig.year}${String(betinfoConfig.startRound).padStart(3, '0')}`,
                 endRound: `${betinfoConfig.year}${String(betinfoConfig.endRound).padStart(3, '0')}`,
                 rounds: betinfoConfig.rounds,
-                year: betinfoConfig.year
+                year: betinfoConfig.year,
+                skipExisting: betinfoConfig.skipExisting
             });
-        } else if (site === 'flashscore') {
+        } else if (activeMode === 'flashscore') {
             if (!flashscoreConfig.url) {
-                // TODO: Replace with Neon Toast/Alert
                 alert(TEXTS.CRAWLER.CONTROL_PANEL.MSG_URL_REQUIRED);
                 return;
             }
             onStart({
                 mode: 'flashscore',
-                ...advancedConfig,
+                ...commonOptions,
                 task: flashscoreConfig.task as any,
                 season: flashscoreConfig.season,
                 url: flashscoreConfig.url!,
@@ -100,7 +125,7 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
         } else {
             onStart({
                 mode: 'mapping',
-                ...advancedConfig,
+                ...commonOptions,
                 task: mappingConfig.task as any
             });
         }
@@ -113,6 +138,50 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
             width: '100%',
             gap: NEON_THEME.spacing.lg
         }}>
+            {/* [NEW] Storage Path Section - Scenario 3 */}
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                padding: NEON_THEME.spacing.md,
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: `1px solid ${NEON_THEME.colors.border.subtle}`
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: NEON_THEME.colors.text.secondary, letterSpacing: '0.5px' }}>
+                        STORAGE PATH
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            onClick={handleSelectDir}
+                            disabled={isRunning}
+                            style={styles.storageBtn}
+                        >
+                            📁 Browse
+                        </button>
+                        <button
+                            onClick={handleOpenDir}
+                            style={styles.storageBtn}
+                        >
+                            📂 Open
+                        </button>
+                    </div>
+                </div>
+                <div style={{
+                    fontSize: '12px',
+                    color: NEON_THEME.colors.text.muted,
+                    backgroundColor: 'rgba(0,0,0,0.2)',
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    wordBreak: 'break-all',
+                    fontFamily: NEON_THEME.typography.fontFamily.mono,
+                    border: `1px solid rgba(255,255,255,0.05)`
+                }}>
+                    {outputDir}
+                </div>
+            </div>
+
             {/* Site Selector - Chrome Style Tabs */}
             <div style={{
                 display: 'flex',
@@ -128,11 +197,11 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
                     { label: TEXTS.CRAWLER.SITE_FLASHSCORE, value: 'flashscore' },
                     { label: TEXTS.CRAWLER.SITE_MAPPING, value: 'mapping' }
                 ].map((tab) => {
-                    const isActive = site === tab.value;
+                    const isActive = activeMode === tab.value;
                     return (
                         <div
                             key={tab.value}
-                            onClick={() => !isRunning && setSite(tab.value as any)}
+                            onClick={() => !isRunning && onModeChange(tab.value as any)}
                             style={{
                                 flex: 1, // Distribute space equally
                                 display: 'flex',
@@ -201,21 +270,21 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
                 gap: NEON_THEME.spacing.md,
                 minHeight: '200px' // Prevent layout shift
             }}>
-                {site === 'betinfo' && (
+                {activeMode === 'betinfo' && (
                     <BetinfoConfigForm
                         config={betinfoConfig}
                         handlers={betinfoHandlers}
                         disabled={isRunning}
                     />
                 )}
-                {site === 'flashscore' && (
+                {activeMode === 'flashscore' && (
                     <FlashscoreConfigForm
                         config={flashscoreConfig}
                         handlers={flashscoreHandlers}
                         disabled={isRunning}
                     />
                 )}
-                {site === 'mapping' && (
+                {activeMode === 'mapping' && (
                     <MappingConfigForm
                         config={mappingConfig}
                         handlers={mappingHandlers}
@@ -293,6 +362,36 @@ const CrawlerControlPanel: React.FC<CrawlerControlPanelProps> = ({ onStart, onSt
             </style>
         </div>
     );
+};
+
+const styles = {
+    container: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: NEON_THEME.spacing.md
+    } as React.CSSProperties,
+    formGroup: {
+        display: 'flex',
+        flexDirection: 'column'
+    } as React.CSSProperties,
+    row: {
+        display: 'flex',
+        gap: NEON_THEME.spacing.md
+    } as React.CSSProperties,
+    storageBtn: {
+        background: 'none',
+        border: `1px solid ${NEON_THEME.colors.border.subtle}`,
+        borderRadius: '4px',
+        color: NEON_THEME.colors.text.secondary,
+        fontSize: '10px',
+        padding: '2px 6px',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        outline: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px'
+    } as React.CSSProperties
 };
 
 export default CrawlerControlPanel;

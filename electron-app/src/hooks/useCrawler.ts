@@ -5,13 +5,39 @@ export function useCrawler() {
     const [isRunning, setIsRunning] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
     const [progress, setProgress] = useState(0);
+    // [Persistence] Load from localStorage or use default
+    const [outputDir, setOutputDir] = useState(() => {
+        return localStorage.getItem('crawler_output_dir') || './data';
+    });
+
+    const updateOutputDir = useCallback((path: string) => {
+        setOutputDir(path);
+        localStorage.setItem('crawler_output_dir', path);
+    }, []);
 
     useEffect(() => {
-        // 브라우저 환경 등 api가 없을 경우 예외 처리
         if (!window.api || !window.api.crawler) {
             console.warn('API not available');
             return;
         }
+
+        // [Path Resolution] Resolve relative path './data' to absolute path
+        const resolveInitialPath = async () => {
+            const currentPath = localStorage.getItem('crawler_output_dir') || './data';
+            if (currentPath.startsWith('.')) {
+                try {
+                    const absolutePath = await (window.api as any).system.resolvePath(currentPath);
+                    setOutputDir(absolutePath);
+                    // Do not save resolved absolute path back to storage immediately
+                    // to keep the concept of relative default if user clears storage?
+                    // Actually, let's update it to absolute so UI is consistent.
+                    // setOutputDir handles the state.
+                } catch (e) {
+                    console.error('Failed to resolve path:', e);
+                }
+            }
+        };
+        resolveInitialPath();
 
         const unsubscribe = window.api.crawler.onMessage((message: CrawlerMessage) => {
             switch (message.type) {
@@ -53,9 +79,9 @@ export function useCrawler() {
             setProgress(0);
             setIsRunning(true);
             setLogs(prev => [...prev, `System: Starting crawler (${options.mode})...`]);
-            
+
             await window.api.crawler.start(options);
-            
+
             setIsRunning(false);
             setLogs(prev => [...prev, 'System: Crawler finished successfully.']);
         } catch (error) {
@@ -82,7 +108,9 @@ export function useCrawler() {
         isRunning,
         logs,
         progress,
+        outputDir,
         startCrawler,
-        stopCrawler
+        stopCrawler,
+        updateOutputDir
     };
 }

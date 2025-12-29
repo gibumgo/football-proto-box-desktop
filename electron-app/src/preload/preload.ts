@@ -15,6 +15,16 @@ contextBridge.exposeInMainWorld('api', {
         }
     },
     // Utils
-    openExternal: (url: string) => ipcRenderer.send('open-url', url)
+    openExternal: (url: string) => ipcRenderer.send('open-url', url),
+    system: {
+        selectDirectory: () => ipcRenderer.invoke('system:select-directory'),
+        openPath: (path: string) => ipcRenderer.invoke('system:open-path', path),
+        resolvePath: (path: string) => ipcRenderer.invoke('system:resolve-path', path)
+    },
+    data: {
+        readFile: (path: string) => ipcRenderer.invoke('data:read-file', path),
+        writeFile: (path: string, content: any) => ipcRenderer.invoke('data:write-file', path, content),
+        listDirectory: (path: string) => ipcRenderer.invoke('data:list-directory', path)
+    }
 });
 
