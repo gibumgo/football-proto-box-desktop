@@ -1,4 +1,4 @@
-package com.footballbet.model;
+package com.footballbet.domain;
 
 public enum Result {
     WIN("승"),

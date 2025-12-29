@@ -1,6 +1,6 @@
 package com.footballbet.repository;
 
-import com.footballbet.model.Match;
+import com.footballbet.domain.Match;
 import java.util.List;
 import java.util.Optional;
 

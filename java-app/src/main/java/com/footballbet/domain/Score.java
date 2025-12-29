@@ -1,4 +1,4 @@
-package com.footballbet.model;
+package com.footballbet.domain;
 
 public record Score(int home, int away) {
     public static Score parse(String scoreStr) {

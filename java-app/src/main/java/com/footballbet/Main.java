@@ -4,6 +4,11 @@ import com.footballbet.controller.MatchController;
 
 public class Main {
     public static void main(String[] args) {
+        if (isArchiveMode(args)) {
+            new com.footballbet.controller.ArchiveController().run(args);
+            return;
+        }
+
         if (args.length > 0 && args[0].equals("--cli")) {
             new MatchController().run(args);
         } else {
@@ -13,5 +18,9 @@ public class Main {
                 e.printStackTrace();
             }
         }
+    }
+
+    private static boolean isArchiveMode(String[] args) {
+        return args.length > 0 && "archive".equals(args[0]);
     }
 }

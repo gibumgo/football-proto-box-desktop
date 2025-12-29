@@ -1,6 +1,6 @@
 package com.footballbet.controller;
 
-import com.footballbet.model.Match;
+import com.footballbet.domain.Match;
 import com.footballbet.service.MatchService;
 import com.footballbet.view.ConsoleView;
 import java.io.File;

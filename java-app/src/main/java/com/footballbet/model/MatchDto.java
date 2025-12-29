@@ -34,6 +34,15 @@ public class MatchDto {
     @CsvBindByName(column = "패(국내)")
     public String loseOdd;
 
+    @CsvBindByName(column = "승(해외)")
+    public String winOddOverseas;
+
+    @CsvBindByName(column = "무(해외)")
+    public String drawOddOverseas;
+
+    @CsvBindByName(column = "패(해외)")
+    public String loseOddOverseas;
+
     @CsvBindByName(column = "스코어")
     public String score;
 

@@ -3,7 +3,7 @@ package com.footballbet.view;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.footballbet.model.Match;
+import com.footballbet.domain.Match;
 import java.util.List;
 
 public class ConsoleView {

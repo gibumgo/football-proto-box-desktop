@@ -1,4 +1,4 @@
-package com.footballbet.model;
+package com.footballbet.domain;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -11,15 +11,17 @@ public class Match {
     private final String home;
     private final String away;
     private final MatchType type;
-    private final Optional<Double> winOdd;
-    private final Optional<Double> drawOdd;
-    private final Optional<Double> loseOdd;
+
+    // Odds encapsulated
+    private final BettingOdds domesticOdds;
+    private final BettingOdds overseasOdds;
+
     private final Optional<Score> score;
     private final Optional<Result> result;
     private final Optional<Double> resultOdd;
 
     public Match(int round, int matchNo, LocalDateTime dateTime, String league, String home, String away,
-            MatchType type, Double winOdd, Double drawOdd, Double loseOdd,
+            MatchType type, BettingOdds domesticOdds, BettingOdds overseasOdds,
             Score score, Result result, Double resultOdd) {
         this.round = round;
         this.matchNo = matchNo;
@@ -28,15 +30,14 @@ public class Match {
         this.home = home;
         this.away = away;
         this.type = type;
-        this.winOdd = Optional.ofNullable(winOdd);
-        this.drawOdd = Optional.ofNullable(drawOdd);
-        this.loseOdd = Optional.ofNullable(loseOdd);
+        this.domesticOdds = domesticOdds;
+        this.overseasOdds = overseasOdds;
         this.score = Optional.ofNullable(score);
         this.result = Optional.ofNullable(result);
         this.resultOdd = Optional.ofNullable(resultOdd);
     }
 
-    // Getters
+    // Basic Getters
     public int getRound() {
         return round;
     }
@@ -65,16 +66,39 @@ public class Match {
         return type;
     }
 
+    // Legacy Support & Convenience (Domestic Defaults)
     public Double getWinOdd() {
-        return winOdd.orElse(null);
+        return domesticOdds != null ? domesticOdds.getWin() : null;
     }
 
     public Double getDrawOdd() {
-        return drawOdd.orElse(null);
+        return domesticOdds != null ? domesticOdds.getDraw() : null;
     }
 
     public Double getLoseOdd() {
-        return loseOdd.orElse(null);
+        return domesticOdds != null ? domesticOdds.getLose() : null;
+    }
+
+    // Accessors for Odds objects
+    public BettingOdds getDomesticOdds() {
+        return domesticOdds;
+    }
+
+    public BettingOdds getOverseasOdds() {
+        return overseasOdds;
+    }
+
+    // Logic: Cutoffs
+    public double getWinCutoff() {
+        return domesticOdds != null ? domesticOdds.getWinDifferential(overseasOdds) : 0.0;
+    }
+
+    public double getDrawCutoff() {
+        return domesticOdds != null ? domesticOdds.getDrawDifferential(overseasOdds) : 0.0;
+    }
+
+    public double getLoseCutoff() {
+        return domesticOdds != null ? domesticOdds.getLoseDifferential(overseasOdds) : 0.0;
     }
 
     public Score getScore() {

@@ -1,8 +1,8 @@
 package com.footballbet.util;
 
-import com.footballbet.model.Match;
-import com.footballbet.model.MatchType;
-import com.footballbet.model.Result;
+import com.footballbet.domain.Match;
+import com.footballbet.domain.MatchType;
+import com.footballbet.domain.Result;
 import com.footballbet.model.MatchDto;
 import com.opencsv.bean.CsvToBeanBuilder;
 import java.io.FileInputStream;
@@ -16,16 +16,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class CsvLoader {
+    private static final int BOM_SIZE = 3;
+    private static final byte BOM_BYTE_1 = (byte) 0xEF;
+    private static final byte BOM_BYTE_2 = (byte) 0xBB;
+    private static final byte BOM_BYTE_3 = (byte) 0xBF;
+
     public List<Match> load(String filePath) {
         try (FileInputStream fis = new FileInputStream(filePath);
-                PushbackInputStream pbis = new PushbackInputStream(fis, 3);
+                PushbackInputStream pbis = new PushbackInputStream(fis, BOM_SIZE);
                 Reader reader = new InputStreamReader(pbis, StandardCharsets.UTF_8)) {
 
             // Skip BOM if present
-            byte[] bom = new byte[3];
-            int n = pbis.read(bom, 0, 3);
+            byte[] bom = new byte[BOM_SIZE];
+            int n = pbis.read(bom, 0, BOM_SIZE);
             if (n != -1) {
-                if (n == 3 && bom[0] == (byte) 0xEF && bom[1] == (byte) 0xBB && bom[2] == (byte) 0xBF) {
+                if (n == BOM_SIZE && bom[0] == BOM_BYTE_1 && bom[1] == BOM_BYTE_2 && bom[2] == BOM_BYTE_3) {
                     // It's a BOM, do nothing (already read)
                 } else {
                     // Not a BOM, push back
@@ -49,6 +54,15 @@ public class CsvLoader {
     }
 
     private Match toDomain(MatchDto dto) {
+        com.footballbet.domain.BettingOdds domestic = new com.footballbet.domain.BettingOdds(
+                ParseUtil.parseDouble(dto.winOdd),
+                ParseUtil.parseDouble(dto.drawOdd),
+                ParseUtil.parseDouble(dto.loseOdd));
+        com.footballbet.domain.BettingOdds overseas = new com.footballbet.domain.BettingOdds(
+                ParseUtil.parseDouble(dto.winOddOverseas),
+                ParseUtil.parseDouble(dto.drawOddOverseas),
+                ParseUtil.parseDouble(dto.loseOddOverseas));
+
         return new Match(
                 ParseUtil.parseInt(dto.round),
                 ParseUtil.parseInt(dto.matchNo),
@@ -57,9 +71,8 @@ public class CsvLoader {
                 dto.home,
                 dto.away,
                 MatchType.from(dto.type),
-                ParseUtil.parseDouble(dto.winOdd),
-                ParseUtil.parseDouble(dto.drawOdd),
-                ParseUtil.parseDouble(dto.loseOdd),
+                domestic,
+                overseas,
                 ParseUtil.parseScore(dto.score),
                 Result.from(dto.result),
                 ParseUtil.parseDouble(dto.resultOdd));
