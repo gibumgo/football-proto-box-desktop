@@ -22,6 +22,10 @@ contextBridge.exposeInMainWorld('api', {
         readFile: (path: string) => ipcRenderer.invoke('data:read-file', path),
         writeFile: (path: string, content: any) => ipcRenderer.invoke('data:write-file', path, content),
         listDirectory: (path: string) => ipcRenderer.invoke('data:list-directory', path)
+    },
+    archive: {
+        getAvailableRounds: () => ipcRenderer.invoke('archive:list-rounds'),
+        getRoundData: (round: number) => ipcRenderer.invoke('archive:get-data', round)
     }
 });
 

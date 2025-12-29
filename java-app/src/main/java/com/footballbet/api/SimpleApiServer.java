@@ -14,6 +14,7 @@ public class SimpleApiServer {
     public void start() throws IOException {
         server = HttpServer.create(new InetSocketAddress(PORT), 0);
         server.createContext("/api/crawler", new CrawlerController());
+        server.createContext("/api/archive", new com.footballbet.controller.ArchiveController());
         server.setExecutor(Executors.newCachedThreadPool());
         server.start();
         System.out.println("Server started on port " + PORT);

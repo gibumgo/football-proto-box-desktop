@@ -31,6 +31,32 @@ public class ArchiveService {
         }
 
         List<Match> matches = csvLoader.load(file.getAbsolutePath());
+
+        java.util.Map<String, Match> generalMatches = new java.util.HashMap<>();
+        for (Match m : matches) {
+            if (m.getType() == com.footballbet.domain.MatchType.GENERAL) {
+                String key = m.getHome() + "_" + m.getAway();
+                generalMatches.put(key, m);
+            }
+        }
+
+        for (Match match : matches) {
+            if (match.getType() == com.footballbet.domain.MatchType.HANDICAP) {
+                String key = match.getHome() + "_" + match.getAway();
+                Match generalMatch = generalMatches.get(key);
+
+                if (generalMatch != null) {
+                    com.footballbet.domain.Score hScore = match.getScore();
+                    com.footballbet.domain.Score gScore = generalMatch.getScore();
+
+                    if (hScore != null && gScore != null) {
+                        double diff = hScore.home() - gScore.home();
+                        match.setHandicapNumber(diff);
+                    }
+                }
+            }
+        }
+
         RoundStats stats = new RoundStats(roundSequence);
         for (Match match : matches) {
             stats.addMatch(match);

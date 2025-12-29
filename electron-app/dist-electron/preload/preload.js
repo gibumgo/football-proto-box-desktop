@@ -23,5 +23,9 @@ electron_1.contextBridge.exposeInMainWorld('api', {
         readFile: (path) => electron_1.ipcRenderer.invoke('data:read-file', path),
         writeFile: (path, content) => electron_1.ipcRenderer.invoke('data:write-file', path, content),
         listDirectory: (path) => electron_1.ipcRenderer.invoke('data:list-directory', path)
+    },
+    archive: {
+        getAvailableRounds: () => electron_1.ipcRenderer.invoke('archive:list-rounds'),
+        getRoundData: (round) => electron_1.ipcRenderer.invoke('archive:get-data', round)
     }
 });

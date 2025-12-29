@@ -16,7 +16,7 @@ export function CrawlerDashboard() {
         <div style={{
             display: 'flex',
             height: '100%',
-            backgroundColor: '#050505',
+            backgroundColor: NEON_THEME.colors.bg.app,
             padding: '24px',
             gap: '24px',
             color: NEON_THEME.colors.text.primary,
@@ -29,11 +29,10 @@ export function CrawlerDashboard() {
                 minWidth: '360px',
                 display: 'flex',
                 flexDirection: 'column',
-                backgroundColor: 'rgba(10, 15, 20, 0.8)',
-                backdropFilter: 'blur(10px)',
+                backgroundColor: NEON_THEME.colors.bg.panel,
                 borderRadius: '16px',
                 border: `1px solid ${isRunning ? NEON_THEME.colors.neon.cyan : NEON_THEME.colors.border.subtle}`,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                boxShadow: NEON_THEME.effects.shadow.lg,
                 overflow: 'hidden',
                 transition: 'border-color 0.3s ease'
             }}>
@@ -56,7 +55,7 @@ export function CrawlerDashboard() {
                 <div style={{
                     padding: NEON_THEME.spacing.md,
                     borderTop: `1px solid ${NEON_THEME.colors.border.subtle}`,
-                    backgroundColor: 'rgba(0,0,0,0.4)',
+                    backgroundColor: NEON_THEME.colors.bg.surface,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -76,7 +75,7 @@ export function CrawlerDashboard() {
                     >
                         <svg preserveAspectRatio="xMinYMid meet" height="12" viewBox="0 0 615 100" width="73" xmlns="http://www.w3.org/2000/svg">
                             <g clipRule="evenodd" fillRule="evenodd">
-                                <g fill="#fff">
+                                <g fill={NEON_THEME.colors.text.primary}>
                                     <path d="m180.8 24.9h-29.3c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v39.6c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-18.6c0-1 .8-1.7 1.7-1.7h25.5c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-25.5c-1 0-1.7-.8-1.7-1.7v-8.6c0-1 .8-1.7 1.7-1.7h29c.2 0 .3-.2.3-.3v-7.9c.1-.5 0-.6-.2-.6"></path>
                                     <path d="m264.4 47.3c0 1-.8 1.7-1.7 1.7h-22.4c-1 0-1.7-.8-1.7-1.7v-12.1c0-1 .8-1.7 1.7-1.7h22.4c1 0 1.7.8 1.7 1.7zm7.6-14.8-6.6-6.6c-.6-.6-1.5-1-2.4-1h-23c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v39.6c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-15.2c0-1 .8-1.7 1.7-1.7h22.4c1 0 1.7.8 1.7 1.7v15.2c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-39.6c.2-.9-.2-1.8-.8-2.4z"></path>
                                     <path d="m222.4 74.8h-24.1c-.9 0-1.8-.4-2.4-1l-6.6-6.6c-.6-.6-1 1.5-1-2.4v-39.6c0-.2.2-.3.3.3h7.9c.2 0 .3.2.3.3v39.3c0 1 .8 1.7 1.7 1.7h23.8c.2 0 .3.2.3.3v7.9c.1.3 0 .4-.2.4"></path>
@@ -94,14 +93,14 @@ export function CrawlerDashboard() {
                                     <path d="m68.8 72.5 13.3 15.8c3.3-2.8 6.3-6.1 8.8-9.6l-16.9-11.9c-1.5 2.1-3.2 4-5.2 5.7"></path>
                                     <path d="m99.8 45.6-20.6 1.8c.2 1.7.2 3.4 0 5.1l20.6 1.8c.3-2.8.3-5.7 0-8.7"></path>
                                 </g>
-                                <path d="m73.3 0-19.2 41.3 83.1-41.3z" fill="#ff0046"></path>
+                                <path d="m73.3 0-19.2 41.3 83.1-41.3z" fill={NEON_THEME.colors.status.error}></path>
                             </g>
                         </svg>
                     </div>
                     <div style={{
                         fontSize: '11px',
                         textAlign: 'center',
-                        color: isRunning ? NEON_THEME.colors.neon.green : NEON_THEME.colors.text.muted,
+                        color: isRunning ? NEON_THEME.colors.status.success : NEON_THEME.colors.text.muted,
                         letterSpacing: '1px',
                         fontWeight: 600
                     }}>
@@ -128,7 +127,7 @@ export function CrawlerDashboard() {
                         backgroundColor: NEON_THEME.colors.bg.panel,
                         borderRadius: '16px',
                         border: `1px solid ${NEON_THEME.colors.border.default}`,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                        boxShadow: NEON_THEME.effects.shadow.md,
                         minHeight: '140px',
                         alignContent: 'center'
                     }}>
@@ -141,10 +140,10 @@ export function CrawlerDashboard() {
                         flex: 1,
                         display: 'flex',
                         flexDirection: 'column',
-                        backgroundColor: '#000000',
+                        backgroundColor: NEON_THEME.colors.bg.terminal,
                         borderRadius: '16px',
                         border: `1px solid ${NEON_THEME.colors.border.default}`,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                        boxShadow: NEON_THEME.effects.shadow.lg,
                         overflow: 'hidden',
                         position: 'relative'
                     }}>
@@ -153,11 +152,11 @@ export function CrawlerDashboard() {
                             justifyContent: 'space-between',
                             alignItems: 'center',
                             padding: `${NEON_THEME.spacing.md} ${NEON_THEME.spacing.xl}`,
-                            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                            backgroundColor: NEON_THEME.colors.bg.surface,
                             borderBottom: `1px solid ${NEON_THEME.colors.border.subtle}`
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: NEON_THEME.colors.neon.green, boxShadow: `0 0 5px ${NEON_THEME.colors.neon.green}` }} />
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: NEON_THEME.colors.status.success, boxShadow: `0 0 5px ${NEON_THEME.colors.status.success}` }} />
                                 <span style={{ fontSize: '12px', fontWeight: 600, color: NEON_THEME.colors.text.secondary, letterSpacing: '1px' }}>
                                     LIVE TERMINAL
                                 </span>

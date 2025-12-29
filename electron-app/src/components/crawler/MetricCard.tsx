@@ -41,7 +41,7 @@ function getAccentColor(accent: MetricCardProps['accent']): string {
 
 const styles = {
     card: {
-        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+        backgroundColor: NEON_THEME.colors.bg.surface,
         border: `1px solid ${NEON_THEME.colors.border.default}`,
         borderRadius: NEON_THEME.layout.radius.sm,
         padding: NEON_THEME.spacing.md,

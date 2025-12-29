@@ -22,15 +22,19 @@ public class RoundStats {
 
     public void addMatch(Match match) {
         this.matches.add(match);
-        this.totalMatches++;
 
-        Result result = match.getResult();
-        if (result != null) {
-            this.finishedMatches++;
+        MatchType type = match.getType();
+        if (type == MatchType.GENERAL || type == MatchType.HANDICAP) {
+            this.totalMatches++;
 
-            BettingOdds odds = match.getDomesticOdds();
-            if (odds != null) {
-                analyzeResult(odds, result);
+            Result result = match.getResult();
+            if (result != null) {
+                this.finishedMatches++;
+
+                BettingOdds odds = match.getDomesticOdds();
+                if (odds != null) {
+                    analyzeResult(odds, result);
+                }
             }
         }
     }

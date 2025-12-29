@@ -5,10 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const child_process_1 = require("child_process");
 const pythonRunner_1 = require("./pythonRunner");
 let mainWindow = null;
 let pythonRunner = null;
+// PROJECT_ROOT 및 DATA_ROOT 설정
+const PROJECT_ROOT = path_1.default.resolve(__dirname, '../../..');
+const DATA_ROOT = path_1.default.join(PROJECT_ROOT, 'data');
 function createWindow() {
     mainWindow = new electron_1.BrowserWindow({
         width: 1600,
@@ -40,12 +44,12 @@ electron_1.app.on('window-all-closed', () => {
     if (process.platform !== 'darwin')
         electron_1.app.quit();
 });
+// 데이터 로드 (메인 대시보드)
 electron_1.ipcMain.handle('load-data', async () => {
     return new Promise((resolve, reject) => {
-        const jarPath = path_1.default.resolve(__dirname, '../../../java-app/build/libs/football-bet-parser-1.0.0-SNAPSHOT.jar');
-        const dataDir = path_1.default.resolve(__dirname, '../../../data');
-        console.log('Spawning Java process:', jarPath, dataDir);
-        const javaProcess = (0, child_process_1.spawn)('java', ['-jar', jarPath, dataDir]);
+        const jarPath = path_1.default.resolve(PROJECT_ROOT, 'java-app/build/libs/football-bet-parser-1.0.0-SNAPSHOT.jar');
+        console.log('Spawning Java process:', jarPath, DATA_ROOT);
+        const javaProcess = (0, child_process_1.spawn)('java', ['-jar', jarPath, DATA_ROOT]);
         let data = '';
         let error = '';
         javaProcess.stdout.on('data', (chunk) => {
@@ -71,6 +75,58 @@ electron_1.ipcMain.handle('load-data', async () => {
         });
     });
 });
+// 아카이브 데이터 조회
+electron_1.ipcMain.handle('archive:get-data', async (_event, round) => {
+    return new Promise((resolve, reject) => {
+        const jarPath = path_1.default.resolve(PROJECT_ROOT, 'java-app/build/libs/football-bet-parser-1.0.0-SNAPSHOT.jar');
+        console.log('Spawning Java archive process for round:', round);
+        const javaProcess = (0, child_process_1.spawn)('java', ['-jar', jarPath, 'archive', round.toString()]);
+        let data = '';
+        let error = '';
+        javaProcess.stdout.on('data', (chunk) => {
+            data += chunk.toString();
+        });
+        javaProcess.stderr.on('data', (chunk) => {
+            error += chunk.toString();
+        });
+        javaProcess.on('close', (code) => {
+            if (code === 0) {
+                try {
+                    const jsonData = JSON.parse(data);
+                    resolve(jsonData);
+                }
+                catch (e) {
+                    reject('Failed to parse JSON: ' + e);
+                }
+            }
+            else {
+                reject(`Java archive process exited with code ${code}: ${error}`);
+            }
+        });
+    });
+});
+// 회차 목록 조회
+electron_1.ipcMain.handle('archive:list-rounds', async () => {
+    try {
+        const betinfoDir = path_1.default.join(DATA_ROOT, 'crawled/betinfo');
+        if (!fs_1.default.existsSync(betinfoDir)) {
+            return { success: true, rounds: [] };
+        }
+        const files = fs_1.default.readdirSync(betinfoDir);
+        const rounds = files
+            .map(file => {
+            const match = file.match(/betinfo_proto_rate_(\d+)\.csv/);
+            return match ? parseInt(match[1]) : null;
+        })
+            .filter((round) => round !== null)
+            .sort((a, b) => b - a);
+        return { success: true, rounds };
+    }
+    catch (e) {
+        return { success: false, error: e };
+    }
+});
+// 크롤러 제어
 electron_1.ipcMain.handle('crawler:start', async (_event, options) => {
     if (!pythonRunner) {
         pythonRunner = new pythonRunner_1.PythonRunner();
@@ -108,9 +164,7 @@ electron_1.ipcMain.handle('crawler:status', async () => {
 electron_1.ipcMain.on('open-url', (_event, url) => {
     electron_1.shell.openExternal(url);
 });
-const fs_1 = __importDefault(require("fs"));
-const PROJECT_ROOT = path_1.default.resolve(__dirname, '../../..');
-const DATA_ROOT = path_1.default.join(PROJECT_ROOT, 'data');
+// 시스템 및 데이터 유틸리티
 electron_1.ipcMain.handle('system:select-directory', async () => {
     if (!mainWindow)
         return null;
@@ -163,7 +217,6 @@ electron_1.ipcMain.handle('data:read-file', async (_event, filePath) => {
             }
         }
         if (!fs_1.default.existsSync(absolutePath)) {
-            console.warn(`[data:read-file] File not found: ${absolutePath}`);
             return { success: false, error: 'File not found' };
         }
         const content = fs_1.default.readFileSync(absolutePath, 'utf8');

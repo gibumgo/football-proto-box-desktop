@@ -2,40 +2,40 @@ export const NEON_THEME = {
     colors: {
         // Backgrounds
         bg: {
-            app: '#050505',      // Deep Void
-            panel: '#0A0F14',    // Darker Navy
-            header: '#0D1117',   // GitHub Dark Dimmed
-            surface: '#161B22',  // Added for Sidebar/Panels (GitHub Dark Default)
-            terminal: '#000000', // Pure Black for Terminal
+            app: '#121212',      // Soft Dark Gray (Eye comfort)
+            panel: '#1E1E1E',    // Slightly lighter gray for contrast
+            header: '#1A1A1A',   // Matching Soft Dark
+            surface: '#252525',  // Cards/Modals
+            terminal: '#000000', // Keep Pure Black for Terminal
         },
-        // Neon Accents
+        // Pastel Accents (Formerly Neon)
         neon: {
-            cyan: '#00F3FF',
-            green: '#00FF9D',
-            red: '#FF2E2E',
-            purple: '#BC13FE',
-            yellow: '#FBBF24',
+            cyan: '#22D3EE',    // Cyan 400 (Pastel)
+            green: '#4ADE80',   // Green 400 (Pastel)
+            red: '#F87171',     // Red 400 (Pastel)
+            purple: '#C084FC',  // Purple 400 (Pastel)
+            yellow: '#FACC15',  // Yellow 400 (Pastel)
         },
         // Standard Text
         text: {
-            primary: '#E5E7EB',
-            secondary: '#9CA3AF',
-            muted: '#4B5563',
-            disabled: '#6B7280', // Gray 500
+            primary: '#E2E8F0',  // Slate 200 (Softer White)
+            secondary: '#94A3B8', // Slate 400
+            muted: '#64748B',    // Slate 500
+            disabled: '#475569', // Slate 600
             inverse: '#000000',
         },
         // Status
         status: {
-            success: '#00FF9D', // Neon Green
-            warning: '#FBBF24', // Neon Yellow
-            error: '#FF2E2E',   // Neon Red
-            info: '#00F3FF',    // Neon Cyan
+            success: '#4ADE80', // Pastel Green
+            warning: '#FACC15', // Pastel Yellow
+            error: '#F87171',   // Pastel Red
+            info: '#22D3EE',    // Pastel Cyan
         },
         // Borders
         border: {
-            default: '#1F2937',             // Subtle Gray
-            active: 'rgba(0, 243, 255, 0.5)', // Glowing Cyan
-            subtle: 'rgba(255, 255, 255, 0.1)',
+            default: '#2D2D2D',             // Softer Border
+            active: 'rgba(34, 211, 238, 0.4)', // Pastel Cyan Glow
+            subtle: 'rgba(255, 255, 255, 0.05)',
         }
     },
     spacing: {

@@ -21,6 +21,10 @@ declare global {
                 writeFile: (path: string, content: any) => Promise<{ success: boolean; error?: any }>;
                 listDirectory: (path: string) => Promise<{ success: boolean; files?: any[]; error?: any }>;
             };
+            archive: {
+                getAvailableRounds: () => Promise<{ success: boolean; rounds: number[]; error?: any }>;
+                getRoundData: (round: number) => Promise<any>;
+            };
         };
     }
 }

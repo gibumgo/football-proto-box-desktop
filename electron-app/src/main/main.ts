@@ -1,11 +1,17 @@
 import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
+import type { IpcMainInvokeEvent } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { spawn } from 'child_process';
 import { PythonRunner } from './pythonRunner';
 import type { CrawlerOptions } from '../types/crawler';
 
 let mainWindow: BrowserWindow | null = null;
 let pythonRunner: PythonRunner | null = null;
+
+// PROJECT_ROOT 및 DATA_ROOT 설정
+const PROJECT_ROOT = path.resolve(__dirname, '../../..');
+const DATA_ROOT = path.join(PROJECT_ROOT, 'data');
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -40,14 +46,14 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
+// 데이터 로드 (메인 대시보드)
 ipcMain.handle('load-data', async () => {
     return new Promise((resolve, reject) => {
-        const jarPath = path.resolve(__dirname, '../../../java-app/build/libs/football-bet-parser-1.0.0-SNAPSHOT.jar');
-        const dataDir = path.resolve(__dirname, '../../../data');
+        const jarPath = path.resolve(PROJECT_ROOT, 'java-app/build/libs/football-bet-parser-1.0.0-SNAPSHOT.jar');
 
-        console.log('Spawning Java process:', jarPath, dataDir);
+        console.log('Spawning Java process:', jarPath, DATA_ROOT);
 
-        const javaProcess = spawn('java', ['-jar', jarPath, dataDir]);
+        const javaProcess = spawn('java', ['-jar', jarPath, DATA_ROOT]);
 
         let data = '';
         let error = '';
@@ -76,7 +82,66 @@ ipcMain.handle('load-data', async () => {
     });
 });
 
-ipcMain.handle('crawler:start', async (_event, options: CrawlerOptions) => {
+// 아카이브 데이터 조회
+ipcMain.handle('archive:get-data', async (_event: IpcMainInvokeEvent, round: number) => {
+    return new Promise((resolve, reject) => {
+        const jarPath = path.resolve(PROJECT_ROOT, 'java-app/build/libs/football-bet-parser-1.0.0-SNAPSHOT.jar');
+
+        console.log('Spawning Java archive process for round:', round);
+
+        const javaProcess = spawn('java', ['-jar', jarPath, 'archive', round.toString()]);
+
+        let data = '';
+        let error = '';
+
+        javaProcess.stdout.on('data', (chunk: Buffer) => {
+            data += chunk.toString();
+        });
+
+        javaProcess.stderr.on('data', (chunk: Buffer) => {
+            error += chunk.toString();
+        });
+
+        javaProcess.on('close', (code: number) => {
+            if (code === 0) {
+                try {
+                    const jsonData = JSON.parse(data);
+                    resolve(jsonData);
+                } catch (e) {
+                    reject('Failed to parse JSON: ' + e);
+                }
+            } else {
+                reject(`Java archive process exited with code ${code}: ${error}`);
+            }
+        });
+    });
+});
+
+// 회차 목록 조회
+ipcMain.handle('archive:list-rounds', async () => {
+    try {
+        const betinfoDir = path.join(DATA_ROOT, 'crawled/betinfo');
+        if (!fs.existsSync(betinfoDir)) {
+            return { success: true, rounds: [] };
+        }
+
+        const files = fs.readdirSync(betinfoDir);
+        const rounds = files
+            .map(file => {
+                const match = file.match(/betinfo_proto_rate_(\d+)\.csv/);
+                return match ? parseInt(match[1]) : null;
+            })
+            .filter((round): round is number => round !== null)
+            .sort((a, b) => b - a);
+
+        return { success: true, rounds };
+    } catch (e) {
+        return { success: false, error: e };
+    }
+});
+
+// 크롤러 제어
+ipcMain.handle('crawler:start', async (_event: IpcMainInvokeEvent, options: CrawlerOptions) => {
     if (!pythonRunner) {
         pythonRunner = new PythonRunner();
     }
@@ -118,16 +183,12 @@ ipcMain.handle('crawler:status', async () => {
     const isRunning = pythonRunner ? pythonRunner.isRunning() : false;
     return { isRunning };
 });
-ipcMain.on('open-url', (_event, url: string) => {
+
+ipcMain.on('open-url', (_event: any, url: string) => {
     shell.openExternal(url);
 });
 
-import fs from 'fs';
-
-const PROJECT_ROOT = path.resolve(__dirname, '../../..');
-
-const DATA_ROOT = path.join(PROJECT_ROOT, 'data');
-
+// 시스템 및 데이터 유틸리티
 ipcMain.handle('system:select-directory', async () => {
     if (!mainWindow) return null;
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -139,7 +200,7 @@ ipcMain.handle('system:select-directory', async () => {
     return null;
 });
 
-ipcMain.handle('system:open-path', async (_event, targetPath: string) => {
+ipcMain.handle('system:open-path', async (_event: IpcMainInvokeEvent, targetPath: string) => {
     try {
         let absolutePath = targetPath;
         if (!path.isAbsolute(targetPath)) {
@@ -157,7 +218,7 @@ ipcMain.handle('system:open-path', async (_event, targetPath: string) => {
     }
 });
 
-ipcMain.handle('system:resolve-path', async (_event, targetPath: string) => {
+ipcMain.handle('system:resolve-path', async (_event: IpcMainInvokeEvent, targetPath: string) => {
     try {
         if (path.isAbsolute(targetPath)) {
             return targetPath;
@@ -169,7 +230,7 @@ ipcMain.handle('system:resolve-path', async (_event, targetPath: string) => {
     }
 });
 
-ipcMain.handle('data:read-file', async (_event, filePath: string) => {
+ipcMain.handle('data:read-file', async (_event: IpcMainInvokeEvent, filePath: string) => {
     try {
         let absolutePath = filePath;
 
@@ -183,7 +244,6 @@ ipcMain.handle('data:read-file', async (_event, filePath: string) => {
         }
 
         if (!fs.existsSync(absolutePath)) {
-            console.warn(`[data:read-file] File not found: ${absolutePath}`);
             return { success: false, error: 'File not found' };
         }
 
@@ -202,7 +262,7 @@ ipcMain.handle('data:read-file', async (_event, filePath: string) => {
     }
 });
 
-ipcMain.handle('data:write-file', async (_event, filePath: string, content: string | object) => {
+ipcMain.handle('data:write-file', async (_event: IpcMainInvokeEvent, filePath: string, content: string | object) => {
     try {
         let absolutePath = filePath;
 
@@ -228,7 +288,7 @@ ipcMain.handle('data:write-file', async (_event, filePath: string, content: stri
     }
 });
 
-ipcMain.handle('data:list-directory', async (_event, dirPath: string) => {
+ipcMain.handle('data:list-directory', async (_event: IpcMainInvokeEvent, dirPath: string) => {
     try {
         let absolutePath = dirPath;
         if (!path.isAbsolute(dirPath)) {
