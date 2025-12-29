@@ -1,5 +1,5 @@
 import { Match } from '../../domain/models/match/Match';
-import { COLORS, TYPOGRAPHY } from '../../domain/design/theme';
+import { NEON_THEME } from '../../domain/design/designTokens';
 import { MatchRowVMFactory } from './match-list/MatchRowVMFactory';
 import { MatchListRow } from './match-list/MatchListRow';
 import { SortableHeader } from './match-list/SortableHeader';
@@ -12,26 +12,24 @@ interface MatchListTableProps {
     isLoading?: boolean;
 }
 
-export function MatchListTable({ matches, onSort, sortBy, sortOrder, isLoading }: MatchListTableProps) {
+export function MatchListTable({ matches, onSort, isLoading }: MatchListTableProps) {
     if (isLoading) {
-        return <div style={{ padding: '20px', textAlign: 'center', color: COLORS.TEXT_SECONDARY }}>로딩 중...</div>;
+        return <div style={{ padding: NEON_THEME.spacing.xl, textAlign: 'center', color: NEON_THEME.colors.text.secondary }}>로딩 중...</div>;
     }
 
     if (matches.length === 0) {
         return (
-            <div style={{ padding: '40px', textAlign: 'center', color: COLORS.TEXT_SECONDARY, backgroundColor: COLORS.HEADER, borderRadius: '8px' }}>
+            <div style={{ padding: '40px', textAlign: 'center', color: NEON_THEME.colors.text.secondary, backgroundColor: NEON_THEME.colors.bg.header, borderRadius: NEON_THEME.layout.radius.lg }}>
                 경기 데이터가 없습니다
             </div>
         );
     }
 
     return (
-        <div style={{ backgroundColor: COLORS.HEADER, borderRadius: '8px', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: TYPOGRAPHY.SIZE.SM }}>
+        <div style={{ backgroundColor: NEON_THEME.colors.bg.header, borderRadius: NEON_THEME.layout.radius.lg, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: NEON_THEME.typography.size.sm }}>
                 <SortableHeader
-                    onSort={onSort}
-                    sortBy={sortBy}
-                    sortOrder={sortOrder}
+                    onSort={(key) => onSort?.(key as 'date' | 'odds' | 'round')}
                 />
                 <tbody>
                     {matches.map((match, idx) => {

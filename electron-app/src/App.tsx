@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Matches } from './pages/Matches';
 import { Dashboard } from './pages/Dashboard';
+import { CrawlerDashboard } from './pages/CrawlerDashboard';
 import { TeamProfile } from './pages/TeamProfile';
 import { Match } from './domain/models/match/Match';
 import { MatchMapper } from './domain/mappers/MatchMapper';
 import type { MatchDto } from './types';
-import { COLORS } from './domain/design/theme';
+import { NEON_THEME } from './domain/design/designTokens';
+import { TEXTS } from './constants/uiTexts';
 import './App.css';
 
 // Layout Components
@@ -13,7 +15,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
 
-type Page = 'dashboard' | 'matches' | 'team-profile' | 'tools' | 'settings';
+type Page = 'dashboard' | 'leagues' | 'matches' | 'favorites' | 'strategy' | 'odds-flow' | 'archive' | 'crawler' | 'team-profile' | 'tools' | 'settings';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -113,9 +115,6 @@ function App() {
     setSelectedTeam('');
   };
 
-  // 디버깅
-  console.log('현재 페이지:', currentPage, '데이터 개수:', data.length);
-
   return (
     <AppLayout
       sidebar={
@@ -151,6 +150,9 @@ function App() {
       {currentPage === 'dashboard' && (
         <Dashboard data={data} />
       )}
+      {currentPage === 'crawler' && (
+        <CrawlerDashboard />
+      )}
       {currentPage === 'team-profile' && selectedTeam && (
         <TeamProfile
           teamName={selectedTeam}
@@ -158,9 +160,9 @@ function App() {
           onBack={handleBackToMatches}
         />
       )}
-      {(currentPage === 'tools' || currentPage === 'settings') && (
-        <div style={{ padding: '40px', textAlign: 'center', opacity: 0.5, color: COLORS.TEXT_PRIMARY }}>
-          🚧 Work in Progress
+      {(currentPage === 'tools' || currentPage === 'settings' || currentPage === 'leagues' || currentPage === 'favorites' || currentPage === 'strategy' || currentPage === 'odds-flow' || currentPage === 'archive') && (
+        <div style={{ padding: '40px', textAlign: 'center', opacity: 0.5, color: NEON_THEME.colors.text.primary }}>
+          {TEXTS.LAYOUT.WIP}
         </div>
       )}
     </AppLayout>

@@ -1,23 +1,38 @@
-import { COLORS, TYPOGRAPHY } from '../../domain/design/theme';
+import { NEON_THEME } from '../../domain/design/designTokens';
 
 interface StatusProps {
     message?: string;
 }
 
-export function LoadingStatus({ message = "Loading data..." }: StatusProps) {
-    return (
-        <div style={containerStyle}>
-            <div style={spinnerStyle}></div>
-            <p style={textStyle}>{message}</p>
-        </div>
-    );
-}
+export function StatusUI({ status }: { status: 'idle' | 'running' | 'error' }) {
+    let color: string = NEON_THEME.colors.text.muted;
+    let label = '대기중';
 
-export function ErrorStatus({ message = "Error loading data." }: StatusProps) {
+    if (status === 'running') {
+        color = NEON_THEME.colors.neon.green;
+        label = '실행중';
+    } else if (status === 'error') {
+        color = NEON_THEME.colors.neon.red;
+        label = '오류';
+    }
+
     return (
-        <div style={containerStyle}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
-            <p style={{ ...textStyle, color: COLORS.TEXT_PRIMARY }}>{message}</p>
+        <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: NEON_THEME.spacing.sm,
+            fontSize: NEON_THEME.typography.size.sm,
+            color: color,
+            fontWeight: NEON_THEME.typography.weight.bold
+        }}>
+            <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: color,
+                boxShadow: `0 0 8px ${color}`
+            }} />
+            {label}
         </div>
     );
 }
@@ -38,26 +53,19 @@ const containerStyle: React.CSSProperties = {
     justifyContent: 'center',
     height: '100%',
     width: '100%',
-    color: COLORS.TEXT_SECONDARY,
-    fontFamily: TYPOGRAPHY.FONT_FAMILY,
+    color: NEON_THEME.colors.text.secondary,
+    fontFamily: NEON_THEME.typography.fontFamily.sans,
 };
 
 const textStyle: React.CSSProperties = {
-    fontSize: TYPOGRAPHY.SIZE.SM,
-    fontWeight: TYPOGRAPHY.WEIGHT.LIGHT,
+    fontSize: NEON_THEME.typography.size.sm,
+    fontWeight: NEON_THEME.typography.weight.regular,
     marginTop: '12px',
 };
 
-const spinnerStyle: React.CSSProperties = {
-    width: '32px',
-    height: '32px',
-    border: `3px solid ${COLORS.BORDER}`,
-    borderTop: `3px solid ${COLORS.TEXT_PRIMARY}`,
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
-};
 
-// Add keyframes to global CSS or styled component
+
+
 export const statusStyles = `
 @keyframes spin {
   0% { transform: rotate(0deg); }

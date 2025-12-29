@@ -1,8 +1,11 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import path from 'path';
 import { spawn } from 'child_process';
+import { PythonRunner } from './pythonRunner';
+import type { CrawlerOptions } from '../types/crawler';
 
 let mainWindow: BrowserWindow | null = null;
+let pythonRunner: PythonRunner | null = null;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -39,9 +42,6 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('load-data', async () => {
     return new Promise((resolve, reject) => {
-        // Path to JAR file
-        // In dev, it's relative to project root. In prod, it might be different.
-        // For now, assume dev environment structure or adjust path.
         const jarPath = path.resolve(__dirname, '../../../java-app/build/libs/football-bet-parser-1.0.0-SNAPSHOT.jar');
         const dataDir = path.resolve(__dirname, '../../../data');
 
@@ -74,4 +74,187 @@ ipcMain.handle('load-data', async () => {
             }
         });
     });
+});
+
+ipcMain.handle('crawler:start', async (_event, options: CrawlerOptions) => {
+    if (!pythonRunner) {
+        pythonRunner = new PythonRunner();
+    }
+
+    if (pythonRunner.isRunning()) {
+        throw new Error('Crawler is already running');
+    }
+
+    return new Promise((resolve, reject) => {
+        pythonRunner!.start(
+            options,
+            (message) => {
+                if (mainWindow) {
+                    mainWindow.webContents.send('crawler:message', message);
+                }
+            },
+            (exitCode) => {
+                if (exitCode === 0) {
+                    resolve({ success: true });
+                } else {
+                    reject(new Error(`Crawler exited with code ${exitCode}`));
+                }
+            },
+            (error) => {
+                reject(error);
+            }
+        );
+    });
+});
+
+ipcMain.handle('crawler:stop', async () => {
+    if (pythonRunner) {
+        pythonRunner.stop();
+    }
+    return { success: true };
+});
+
+ipcMain.handle('crawler:status', async () => {
+    const isRunning = pythonRunner ? pythonRunner.isRunning() : false;
+    return { isRunning };
+});
+ipcMain.on('open-url', (_event, url: string) => {
+    shell.openExternal(url);
+});
+
+import fs from 'fs';
+
+const PROJECT_ROOT = path.resolve(__dirname, '../../..');
+
+const DATA_ROOT = path.join(PROJECT_ROOT, 'data');
+
+ipcMain.handle('system:select-directory', async () => {
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory', 'createDirectory']
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+        return result.filePaths[0];
+    }
+    return null;
+});
+
+ipcMain.handle('system:open-path', async (_event, targetPath: string) => {
+    try {
+        let absolutePath = targetPath;
+        if (!path.isAbsolute(targetPath)) {
+            absolutePath = path.resolve(PROJECT_ROOT, targetPath);
+        }
+
+        if (!fs.existsSync(absolutePath)) {
+            fs.mkdirSync(absolutePath, { recursive: true });
+        }
+
+        await shell.openPath(absolutePath);
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: e };
+    }
+});
+
+ipcMain.handle('system:resolve-path', async (_event, targetPath: string) => {
+    try {
+        if (path.isAbsolute(targetPath)) {
+            return targetPath;
+        }
+        return path.resolve(PROJECT_ROOT, targetPath);
+    } catch (e) {
+        console.error('Failed to resolve path:', e);
+        return targetPath;
+    }
+});
+
+ipcMain.handle('data:read-file', async (_event, filePath: string) => {
+    try {
+        let absolutePath = filePath;
+
+        if (!path.isAbsolute(filePath)) {
+            if (filePath.startsWith('data/')) {
+                const relativePath = filePath.substring(5);
+                absolutePath = path.join(DATA_ROOT, relativePath);
+            } else {
+                absolutePath = path.join(DATA_ROOT, filePath);
+            }
+        }
+
+        if (!fs.existsSync(absolutePath)) {
+            console.warn(`[data:read-file] File not found: ${absolutePath}`);
+            return { success: false, error: 'File not found' };
+        }
+
+        const content = fs.readFileSync(absolutePath, 'utf8');
+        if (absolutePath.endsWith('.json')) {
+            try {
+                return { success: true, data: JSON.parse(content) };
+            } catch (e) {
+                return { success: false, error: 'Failed to parse JSON', raw: content };
+            }
+        }
+
+        return { success: true, data: content };
+    } catch (e) {
+        return { success: false, error: e };
+    }
+});
+
+ipcMain.handle('data:write-file', async (_event, filePath: string, content: string | object) => {
+    try {
+        let absolutePath = filePath;
+
+        if (!path.isAbsolute(filePath)) {
+            if (filePath.startsWith('data/')) {
+                const relativePath = filePath.substring(5);
+                absolutePath = path.join(DATA_ROOT, relativePath);
+            } else {
+                absolutePath = path.join(DATA_ROOT, filePath);
+            }
+        }
+
+        const dir = path.dirname(absolutePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        const dataToWrite = typeof content === 'object' ? JSON.stringify(content, null, 2) : content;
+        fs.writeFileSync(absolutePath, dataToWrite, 'utf8');
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: e };
+    }
+});
+
+ipcMain.handle('data:list-directory', async (_event, dirPath: string) => {
+    try {
+        let absolutePath = dirPath;
+        if (!path.isAbsolute(dirPath)) {
+            if (dirPath.startsWith('data/')) {
+                absolutePath = path.join(DATA_ROOT, dirPath.substring(5));
+            } else {
+                absolutePath = path.join(DATA_ROOT, dirPath);
+            }
+        }
+
+        if (!fs.existsSync(absolutePath)) {
+            return { success: true, files: [] };
+        }
+
+        const files = fs.readdirSync(absolutePath).map(file => {
+            const stats = fs.statSync(path.join(absolutePath, file));
+            return {
+                name: file,
+                isDirectory: stats.isDirectory(),
+                size: stats.size,
+                mtime: stats.mtime
+            };
+        });
+
+        return { success: true, files };
+    } catch (e) {
+        return { success: false, error: e };
+    }
 });

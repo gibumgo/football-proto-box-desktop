@@ -1,5 +1,5 @@
 
-import { COLORS, TYPOGRAPHY } from '../../domain/design/theme';
+import { NEON_THEME } from '../../domain/design/designTokens';
 
 interface OddsFilterProps {
     availableOdds: number[];
@@ -55,26 +55,26 @@ export function OddsFilter({ availableOdds, selectedOdds, onOddsChange }: OddsFi
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: NEON_THEME.spacing.md }}>
             {/* 1. 그룹 필터 (Quick Group Toggle) */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: NEON_THEME.spacing.sm, flexWrap: 'wrap' }}>
                 <GroupButton
                     label="2.0 미만"
                     active={isGroupActive('low')}
                     onClick={() => handleGroupToggle('low')}
-                    color={COLORS.NEON_GREEN}
+                    color={NEON_THEME.colors.neon.green}
                 />
                 <GroupButton
                     label="2.0 ~ 3.0"
                     active={isGroupActive('mid')}
                     onClick={() => handleGroupToggle('mid')}
-                    color={COLORS.NEON_YELLOW}
+                    color={NEON_THEME.colors.neon.yellow}
                 />
                 <GroupButton
                     label="3.0 초과"
                     active={isGroupActive('high')}
                     onClick={() => handleGroupToggle('high')}
-                    color={COLORS.NEON_RED}
+                    color={NEON_THEME.colors.neon.red}
                 />
             </div>
 
@@ -83,10 +83,10 @@ export function OddsFilter({ availableOdds, selectedOdds, onOddsChange }: OddsFi
                 {availableOdds.map(odd => {
                     const isActive = selectedOdds.includes(odd);
                     const group = getGroup(odd);
-                    let activeColor = COLORS.NEON_BLUE;
-                    if (group === 'low') activeColor = COLORS.NEON_GREEN;
-                    else if (group === 'mid') activeColor = COLORS.NEON_YELLOW;
-                    else activeColor = COLORS.NEON_RED;
+                    let activeColor: string = NEON_THEME.colors.neon.cyan;
+                    if (group === 'low') activeColor = NEON_THEME.colors.neon.green;
+                    else if (group === 'mid') activeColor = NEON_THEME.colors.neon.yellow;
+                    else activeColor = NEON_THEME.colors.neon.red;
 
                     return (
                         <button
@@ -95,12 +95,12 @@ export function OddsFilter({ availableOdds, selectedOdds, onOddsChange }: OddsFi
                             style={{
                                 padding: '6px 12px',
                                 borderRadius: '16px',
-                                border: `1px solid ${isActive ? activeColor : COLORS.BORDER}`,
+                                border: `1px solid ${isActive ? activeColor : NEON_THEME.colors.border.default}`,
                                 backgroundColor: isActive ? `${activeColor}20` : 'transparent', // 20 hex alpha ~ 12%
-                                color: isActive ? activeColor : COLORS.TEXT_SECONDARY,
+                                color: isActive ? activeColor : NEON_THEME.colors.text.secondary,
                                 cursor: 'pointer',
-                                fontSize: TYPOGRAPHY.SIZE.XS,
-                                fontWeight: isActive ? TYPOGRAPHY.WEIGHT.BOLD : TYPOGRAPHY.WEIGHT.REGULAR,
+                                fontSize: NEON_THEME.typography.size.xs,
+                                fontWeight: isActive ? NEON_THEME.typography.weight.bold : NEON_THEME.typography.weight.regular,
                                 transition: 'all 0.2s ease'
                             }}
                         >
@@ -110,7 +110,7 @@ export function OddsFilter({ availableOdds, selectedOdds, onOddsChange }: OddsFi
                 })}
             </div>
             {selectedOdds.length > 0 && (
-                <div style={{ fontSize: TYPOGRAPHY.SIZE.XS, color: COLORS.TEXT_SECONDARY, textAlign: 'right' }}>
+                <div style={{ fontSize: NEON_THEME.typography.size.xs, color: NEON_THEME.colors.text.secondary, textAlign: 'right' }}>
                     {selectedOdds.length}개 선택됨
                 </div>
             )}
@@ -126,13 +126,13 @@ function GroupButton({ label, active, onClick, color }: { label: string, active:
             style={{
                 flex: 1,
                 padding: '8px',
-                borderRadius: '6px',
-                border: `1px solid ${active ? color : COLORS.BORDER}`,
-                backgroundColor: active ? `${color}30` : COLORS.BUTTON_SECONDARY,
-                color: active ? color : COLORS.TEXT_SECONDARY,
+                borderRadius: NEON_THEME.layout.radius.md,
+                border: `1px solid ${active ? color : NEON_THEME.colors.border.default}`,
+                backgroundColor: active ? `${color}30` : NEON_THEME.colors.bg.header,
+                color: active ? color : NEON_THEME.colors.text.secondary,
                 cursor: 'pointer',
-                fontSize: TYPOGRAPHY.SIZE.SM,
-                fontWeight: TYPOGRAPHY.WEIGHT.SEMIBOLD,
+                fontSize: NEON_THEME.typography.size.sm,
+                fontWeight: NEON_THEME.typography.weight.bold,
                 transition: 'all 0.2s ease'
             }}
         >
