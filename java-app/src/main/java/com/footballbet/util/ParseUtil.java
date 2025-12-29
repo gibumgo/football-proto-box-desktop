@@ -1,6 +1,6 @@
 package com.footballbet.util;
 
-import com.footballbet.model.Score;
+import com.footballbet.domain.Score;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;

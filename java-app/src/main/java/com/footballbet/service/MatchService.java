@@ -1,6 +1,6 @@
 package com.footballbet.service;
 
-import com.footballbet.model.Match;
+import com.footballbet.domain.Match;
 import com.footballbet.util.CsvLoader;
 import java.io.File;
 import java.util.ArrayList;
