@@ -1,42 +1,43 @@
-import { COLORS, TYPOGRAPHY } from '../../../domain/design/theme';
+import { NEON_THEME } from '../../../domain/design/designTokens';
+import { TEXTS } from '../../../constants/uiTexts';
 
 interface SortableHeaderProps {
-    onSort?: (column: 'date' | 'odds' | 'round') => void;
-    sortBy?: 'date' | 'odds' | 'round';
-    sortOrder?: 'asc' | 'desc';
+    onSort: (key: string) => void;
 }
 
-const headerStyle: React.CSSProperties = {
-    padding: '12px 6px',
-    textAlign: 'center',
-    color: COLORS.TEXT_SECONDARY,
-    fontWeight: TYPOGRAPHY.WEIGHT.SEMIBOLD,
-    fontSize: TYPOGRAPHY.SIZE.XS,
-    whiteSpace: 'nowrap'
+const styles = {
+    th: {
+        padding: '12px 16px',
+        textAlign: 'center' as const,
+        color: NEON_THEME.colors.text.secondary,
+        fontWeight: NEON_THEME.typography.weight.medium,
+        fontSize: NEON_THEME.typography.size.xs,
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.05em',
+        borderBottom: `2px solid ${NEON_THEME.colors.border.default}`,
+        cursor: 'pointer',
+        userSelect: 'none' as const,
+        transition: 'color 0.2s'
+    }
 };
 
-export function SortableHeader({ onSort, sortBy, sortOrder }: SortableHeaderProps) {
+export const SortableHeader = ({ onSort }: SortableHeaderProps) => {
     return (
         <thead>
-            <tr style={{ backgroundColor: COLORS.HEADER, borderBottom: `2px solid ${COLORS.BORDER}` }}>
-                <th style={{ ...headerStyle, cursor: 'pointer' }} onClick={() => onSort?.('round')}>
-                    회차 {sortBy === 'round' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </th>
-                <th style={{ ...headerStyle, cursor: 'pointer' }} onClick={() => onSort?.('date')}>
-                    경기 일시 {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </th>
-                <th style={headerStyle}>리그</th>
-                <th style={headerStyle}>경기 종류</th>
-                <th style={headerStyle}>홈팀</th>
-                <th style={headerStyle}>원정팀</th>
-                <th style={{ ...headerStyle, cursor: 'pointer' }} onClick={() => onSort?.('odds')}>
-                    승
-                </th>
-                <th style={headerStyle}>무</th>
-                <th style={headerStyle}>패</th>
-                <th style={headerStyle}>결과</th>
-                <th style={headerStyle}>스코어</th>
+            <tr style={{ backgroundColor: NEON_THEME.colors.bg.header }}>
+                <th style={styles.th} onClick={() => onSort('round')}>{TEXTS.MATCHES.HEADERS.ROUND}</th>
+                <th style={styles.th} onClick={() => onSort('match_no')}>{TEXTS.MATCHES.HEADERS.MATCH_NO}</th>
+                <th style={styles.th}>{TEXTS.MATCHES.HEADERS.DATE}</th>
+                <th style={styles.th} onClick={() => onSort('league')}>{TEXTS.MATCHES.HEADERS.LEAGUE}</th>
+                <th style={styles.th} onClick={() => onSort('home_team')}>{TEXTS.MATCHES.HEADERS.HOME}</th>
+                <th style={styles.th}>{TEXTS.MATCHES.HEADERS.SCORE}</th>
+                <th style={styles.th} onClick={() => onSort('away_team')}>{TEXTS.MATCHES.HEADERS.AWAY}</th>
+                <th style={styles.th}>{TEXTS.MATCHES.HEADERS.WIN_ODD}</th>
+                <th style={styles.th}>{TEXTS.MATCHES.HEADERS.DRAW_ODD}</th>
+                <th style={styles.th}>{TEXTS.MATCHES.HEADERS.LOSE_ODD}</th>
+                <th style={styles.th}>{TEXTS.MATCHES.HEADERS.RESULT}</th>
+                <th style={styles.th}>{TEXTS.MATCHES.HEADERS.RESULT_ODD}</th>
             </tr>
         </thead>
     );
-}
+};

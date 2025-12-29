@@ -1,4 +1,4 @@
-import { COLORS, TYPOGRAPHY } from '../../../domain/design/theme';
+import { NEON_THEME } from '../../../domain/design/designTokens';
 
 interface OddCellProps {
     value: string;
@@ -9,9 +9,9 @@ interface OddCellProps {
 export function OddCell({ value, isHighlighted, style }: OddCellProps) {
     const highlightStyle: React.CSSProperties = isHighlighted ? {
         backgroundColor: 'rgba(74, 222, 128, 0.15)', // Green bg
-        color: COLORS.NEON_GREEN,
-        fontWeight: TYPOGRAPHY.WEIGHT.BOLD,
-        borderRadius: '4px'
+        color: NEON_THEME.colors.neon.green,
+        fontWeight: NEON_THEME.typography.weight.bold,
+        borderRadius: NEON_THEME.layout.radius.sm
     } : {};
 
     return (
