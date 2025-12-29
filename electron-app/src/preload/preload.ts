@@ -2,8 +2,6 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('api', {
     loadData: () => ipcRenderer.invoke('load-data'),
-
-    // Crawler API
     crawler: {
         start: (options: any) => ipcRenderer.invoke('crawler:start', options),
         stop: () => ipcRenderer.invoke('crawler:stop'),
@@ -14,7 +12,6 @@ contextBridge.exposeInMainWorld('api', {
             return () => ipcRenderer.removeListener('crawler:message', listener);
         }
     },
-    // Utils
     openExternal: (url: string) => ipcRenderer.send('open-url', url),
     system: {
         selectDirectory: () => ipcRenderer.invoke('system:select-directory'),

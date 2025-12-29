@@ -7,11 +7,14 @@ export class PythonRunner {
     private process: ChildProcess | null = null;
     private pythonPath: string;
     private mainScriptPath: string;
+    private dataRoot: string;
 
     constructor() {
-        // Paths relative to the main process location
-        this.pythonPath = 'python3'; // Assumes python3 is in PATH
+        this.pythonPath = 'python3';
         this.mainScriptPath = path.resolve(__dirname, '../../../python-crawler/main.py');
+
+        const PROJECT_ROOT = path.resolve(__dirname, '../../../');
+        this.dataRoot = path.join(PROJECT_ROOT, 'data');
     }
 
     public start(
@@ -33,18 +36,15 @@ export class PythonRunner {
             env: { ...process.env }
         });
 
-        // Parse stdout for IPC messages
         this.process.stdout?.on('data', (chunk: Buffer) => {
             const output = chunk.toString();
             this.parseIPCMessages(output, onMessage);
         });
 
-        // Capture stderr for logs
         this.process.stderr?.on('data', (chunk: Buffer) => {
             const errorOutput = chunk.toString();
             console.error('[PythonRunner] stderr:', errorOutput);
 
-            // Parse [LOG] messages from stderr
             const logMatch = errorOutput.match(/\[LOG\]\[(\w+)\]\s*(.+)/);
             if (logMatch) {
                 onMessage({
@@ -54,14 +54,12 @@ export class PythonRunner {
             }
         });
 
-        // Handle process exit
         this.process.on('close', (code) => {
             console.log('[PythonRunner] Process exited with code:', code);
             this.process = null;
             onComplete(code || 0);
         });
 
-        // Handle process errors
         this.process.on('error', (err) => {
             console.error('[PythonRunner] Process error:', err);
             this.process = null;
@@ -84,8 +82,6 @@ export class PythonRunner {
     private buildCommandArgs(options: CrawlerOptions): string[] {
         const args = [this.mainScriptPath, '--mode', options.mode];
 
-        // 1. Common Options
-        // Headless default is true in config.py, so we only need to pass --no-headless if explicitly false
         if (options.headless === false) {
             args.push('--no-headless');
         } else if (options.headless === true) {
@@ -94,9 +90,9 @@ export class PythonRunner {
 
         if (options.debug) args.push('--debug');
         if (options.timeout) args.push('--timeout', options.timeout.toString());
-        if (options.outputDir) args.push('--output-dir', options.outputDir);
 
-        // 2. Betinfo Options
+        args.push('--output-dir', this.dataRoot);
+
         if (options.mode === 'betinfo') {
             const opts = options as BetinfoOptions;
             if (opts.year) args.push('--year', opts.year.toString());
@@ -113,7 +109,6 @@ export class PythonRunner {
                 args.push('--skip-existing');
             }
         }
-        // 3. Flashscore Options
         else if (options.mode === 'flashscore') {
             const opts = options as FlashscoreOptions;
             args.push('--task', opts.task);
@@ -135,7 +130,6 @@ export class PythonRunner {
         for (const line of lines) {
             if (!line.trim()) continue;
 
-            // STATUS:type|value
             if (line.startsWith('IPC_STATUS:')) {
                 const content = line.substring('IPC_STATUS:'.length);
                 const [statusType, value] = content.split('|');
@@ -144,7 +138,6 @@ export class PythonRunner {
                     payload: { statusType, value }
                 });
             }
-            // PROGRESS:50.0
             else if (line.startsWith('IPC_PROGRESS:')) {
                 const percent = parseFloat(line.substring('IPC_PROGRESS:'.length));
                 onMessage({
@@ -152,7 +145,6 @@ export class PythonRunner {
                     payload: { percent }
                 });
             }
-            // DATA:{json}
             else if (line.startsWith('IPC_DATA:')) {
                 try {
                     const jsonString = line.substring('IPC_DATA:'.length);
@@ -165,7 +157,6 @@ export class PythonRunner {
                     console.error('[PythonRunner] Failed to parse DATA message:', e);
                 }
             }
-            // CHECKPOINT:id
             else if (line.startsWith('IPC_CHECKPOINT:')) {
                 const checkpointId = line.substring('IPC_CHECKPOINT:'.length);
                 onMessage({
@@ -173,7 +164,6 @@ export class PythonRunner {
                     payload: { checkpointId }
                 });
             }
-            // ERROR:code|message
             else if (line.startsWith('IPC_ERROR:')) {
                 const content = line.substring('IPC_ERROR:'.length);
                 const [code, message] = content.split('|');

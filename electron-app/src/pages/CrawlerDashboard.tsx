@@ -10,39 +10,33 @@ export function CrawlerDashboard() {
     const { isRunning, logs, progress, outputDir, startCrawler, stopCrawler, updateOutputDir } = useCrawler();
     const [activeMode, setActiveMode] = useState<'betinfo' | 'flashscore' | 'mapping'>('betinfo');
 
-    // Check if we are in data management mode
     const isDataMode = activeMode === 'mapping';
 
     return (
-        // [Window Background: Deep Void]
         <div style={{
             display: 'flex',
             height: '100%',
-            backgroundColor: '#050505', // Deep Void
-            padding: '24px', // Increased Gap
-            gap: '24px', // Increased Gap
+            backgroundColor: '#050505',
+            padding: '24px',
+            gap: '24px',
             color: NEON_THEME.colors.text.primary,
             fontFamily: NEON_THEME.typography.fontFamily.sans,
             overflow: 'hidden',
             boxSizing: 'border-box'
         }}>
-            {/* [Floating Control Panel] - The "Remote Control" */}
             <div style={{
                 width: '360px',
                 minWidth: '360px',
                 display: 'flex',
                 flexDirection: 'column',
-                backgroundColor: 'rgba(10, 15, 20, 0.8)', // Glassmorphism base
-                backdropFilter: 'blur(10px)', // Glass effect
+                backgroundColor: 'rgba(10, 15, 20, 0.8)',
+                backdropFilter: 'blur(10px)',
                 borderRadius: '16px',
-                border: `1px solid ${isRunning ? NEON_THEME.colors.neon.cyan : NEON_THEME.colors.border.subtle}`, // Active state border
+                border: `1px solid ${isRunning ? NEON_THEME.colors.neon.cyan : NEON_THEME.colors.border.subtle}`,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
                 overflow: 'hidden',
                 transition: 'border-color 0.3s ease'
             }}>
-
-
-                {/* Scrollable Form Area */}
                 <div style={{
                     flex: 1,
                     overflowY: 'auto',
@@ -59,7 +53,6 @@ export function CrawlerDashboard() {
                     />
                 </div>
 
-                {/* Status Footer */}
                 <div style={{
                     padding: NEON_THEME.spacing.md,
                     borderTop: `1px solid ${NEON_THEME.colors.border.subtle}`,
@@ -86,7 +79,7 @@ export function CrawlerDashboard() {
                                 <g fill="#fff">
                                     <path d="m180.8 24.9h-29.3c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v39.6c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-18.6c0-1 .8-1.7 1.7-1.7h25.5c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-25.5c-1 0-1.7-.8-1.7-1.7v-8.6c0-1 .8-1.7 1.7-1.7h29c.2 0 .3-.2.3-.3v-7.9c.1-.5 0-.6-.2-.6"></path>
                                     <path d="m264.4 47.3c0 1-.8 1.7-1.7 1.7h-22.4c-1 0-1.7-.8-1.7-1.7v-12.1c0-1 .8-1.7 1.7-1.7h22.4c1 0 1.7.8 1.7 1.7zm7.6-14.8-6.6-6.6c-.6-.6-1.5-1-2.4-1h-23c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v39.6c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-15.2c0-1 .8-1.7 1.7-1.7h22.4c1 0 1.7.8 1.7 1.7v15.2c0 .2.2.3.3.3h7.9c.2 0 .3-.2.3-.3v-39.6c.2-.9-.2-1.8-.8-2.4z"></path>
-                                    <path d="m222.4 74.8h-24.1c-.9 0-1.8-.4-2.4-1l-6.6-6.6c-.6-.6-1-1.5-1-2.4v-39.6c0-.2.2-.3.3-.3h7.9c.2 0 .3.2.3.3v39.3c0 1 .8 1.7 1.7 1.7h23.8c.2 0 .3.2.3.3v7.9c.1.3 0 .4-.2.4"></path>
+                                    <path d="m222.4 74.8h-24.1c-.9 0-1.8-.4-2.4-1l-6.6-6.6c-.6-.6-1 1.5-1-2.4v-39.6c0-.2.2-.3.3.3h7.9c.2 0 .3.2.3.3v39.3c0 1 .8 1.7 1.7 1.7h23.8c.2 0 .3.2.3.3v7.9c.1.3 0 .4-.2.4"></path>
                                     <path d="m319.8 53.1-6.6-6.6c-.6-.6-1.5-1-2.4-1h-19.2c-1 0-1.7-.8-1.7-1.7v-8.6c0-1 .8-1.7 1.7-1.7h27.2c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-27.5c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v9.2c0 .9.4 1.8 1 2.4l6.6 6.6c.6.6 1.5 1 2.4 1h19.2c1 0 1.7.8 1.7 1.7v8.6c0 1-.8 1.7-1.7 1.7h-27.2c-.2 0-.3.2-.3.3v7.9c0 .2.2.3.3.3h27.5c.9 0 1.8-.4 2.4-1l6.6-6.6c.6-.6 1-1.5 1-2.4v-9.2c0-.8-.3-1.7-1-2.4"></path>
                                     <path d="m419 53.1-6.6-6.6c-.6-.6-1.5-1-2.4-1h-19.2c-.9 0-1.7-.8-1.7-1.7v-8.6c0-1 .8-1.7 1.7-1.7h27.2c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-27.5c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v9.2c0 .9.4 1.8 1 2.4l6.6 6.6c.6.6 1.5 1 2.4 1h19.2c1 0 1.7.8 1.7 1.7v8.6c0 1-.8 1.7-1.7 1.7h-27.2c-.2 0-.3.2-.3.3v7.9c0 .2.2.3.3.3h27.5c.9 0 1.8-.4 2.4-1l6.6-6.6c.6-.6 1-1.5 1-2.4v-9.2c0-.8-.4-1.7-1-2.4"></path>
                                     <path d="m436.8 35.2c0-1 .8-1.7 1.7-1.7h25.5c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-25.8c-.9 0-1.8.4-2.4 1l-6.6 6.6c-.6.6-1 1.5-1 2.4v29.9c0 .9.4 1.8 1 2.4l6.6 6.6c.6.6 1.5 1 2.4 1h25.8c.2 0 .3-.2.3-.3v-7.9c0-.2-.2-.3-.3-.3h-25.5c-1 0-1.7-.8-1.7-1.7z"></path>
@@ -117,20 +110,16 @@ export function CrawlerDashboard() {
                 </div>
             </div>
 
-            {/* [Right Column] - Split into Stats & Console OR Data Management Panel */}
             {isDataMode ? (
-                // [Mode: Data Management]
                 <DataManagementPanel />
             ) : (
-                // [Mode: Crawler Terminal]
                 <div style={{
                     flex: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '16px', // Gap between Stats and Console
+                    gap: '16px',
                     overflow: 'hidden'
                 }}>
-                    {/* [1. Stats Deck] - Top Module */}
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -140,7 +129,7 @@ export function CrawlerDashboard() {
                         borderRadius: '16px',
                         border: `1px solid ${NEON_THEME.colors.border.default}`,
                         boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                        minHeight: '140px', // Anchor height
+                        minHeight: '140px',
                         alignContent: 'center'
                     }}>
                         <MetricCard title="Total Matches" value={logs.length.toString()} unit="games" accent="cyan" />
@@ -148,19 +137,17 @@ export function CrawlerDashboard() {
                         <MetricCard title="Parsing Speed" value="142" unit="ms/item" accent="yellow" />
                     </div>
 
-                    {/* [2. Command Console] - Bottom Module */}
                     <div style={{
                         flex: 1,
                         display: 'flex',
                         flexDirection: 'column',
-                        backgroundColor: '#000000', // Pure black for console feel
+                        backgroundColor: '#000000',
                         borderRadius: '16px',
                         border: `1px solid ${NEON_THEME.colors.border.default}`,
                         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                         overflow: 'hidden',
-                        position: 'relative' // For visual anchoring
+                        position: 'relative'
                     }}>
-                        {/* Console Header */}
                         <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
@@ -178,7 +165,6 @@ export function CrawlerDashboard() {
                             <span style={{ fontSize: '11px', color: NEON_THEME.colors.text.disabled }}>bash-3.2$ tail -f crawl.log</span>
                         </div>
 
-                        {/* Console Body */}
                         <div style={{ flex: 1, overflow: 'hidden', padding: NEON_THEME.spacing.lg }}>
                             <TerminalWindow
                                 logs={logs}

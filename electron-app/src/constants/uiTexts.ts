@@ -43,7 +43,7 @@ export const TEXTS = {
 
         CONTROL_PANEL: {
             ADVANCED_SETTINGS: '고급 설정',
-            BTN_START: '크롤링 시작',
+            BTN_START: '시작',
             BTN_RUNNING: '실행 중...',
             BTN_STOP: '중지',
             MSG_URL_REQUIRED: 'URL을 입력해주세요.',

@@ -71,7 +71,6 @@ electron_1.ipcMain.handle('load-data', async () => {
         });
     });
 });
-// Python Crawler IPC Handlers
 electron_1.ipcMain.handle('crawler:start', async (_event, options) => {
     if (!pythonRunner) {
         pythonRunner = new pythonRunner_1.PythonRunner();
@@ -80,24 +79,18 @@ electron_1.ipcMain.handle('crawler:start', async (_event, options) => {
         throw new Error('Crawler is already running');
     }
     return new Promise((resolve, reject) => {
-        pythonRunner.start(options, 
-        // onMessage: forward to renderer
-        (message) => {
+        pythonRunner.start(options, (message) => {
             if (mainWindow) {
                 mainWindow.webContents.send('crawler:message', message);
             }
-        }, 
-        // onComplete
-        (exitCode) => {
+        }, (exitCode) => {
             if (exitCode === 0) {
                 resolve({ success: true });
             }
             else {
                 reject(new Error(`Crawler exited with code ${exitCode}`));
             }
-        }, 
-        // onError
-        (error) => {
+        }, (error) => {
             reject(error);
         });
     });
@@ -116,11 +109,8 @@ electron_1.ipcMain.on('open-url', (_event, url) => {
     electron_1.shell.openExternal(url);
 });
 const fs_1 = __importDefault(require("fs"));
-// Project Root (football-proto-box-desktop)
-// __dirname is electron-app/dist/main or similar. We need to go up to the project root.
-// Assuming structure: /project/electron-app/dist/main -> ../../../
 const PROJECT_ROOT = path_1.default.resolve(__dirname, '../../..');
-// System Utilities
+const DATA_ROOT = path_1.default.join(PROJECT_ROOT, 'data');
 electron_1.ipcMain.handle('system:select-directory', async () => {
     if (!mainWindow)
         return null;
@@ -160,18 +150,23 @@ electron_1.ipcMain.handle('system:resolve-path', async (_event, targetPath) => {
         return targetPath;
     }
 });
-// Data Management IPC Handlers
 electron_1.ipcMain.handle('data:read-file', async (_event, filePath) => {
     try {
         let absolutePath = filePath;
         if (!path_1.default.isAbsolute(filePath)) {
-            absolutePath = path_1.default.resolve(PROJECT_ROOT, filePath);
+            if (filePath.startsWith('data/')) {
+                const relativePath = filePath.substring(5);
+                absolutePath = path_1.default.join(DATA_ROOT, relativePath);
+            }
+            else {
+                absolutePath = path_1.default.join(DATA_ROOT, filePath);
+            }
         }
         if (!fs_1.default.existsSync(absolutePath)) {
+            console.warn(`[data:read-file] File not found: ${absolutePath}`);
             return { success: false, error: 'File not found' };
         }
         const content = fs_1.default.readFileSync(absolutePath, 'utf8');
-        // Auto-parse JSON
         if (absolutePath.endsWith('.json')) {
             try {
                 return { success: true, data: JSON.parse(content) };
@@ -190,9 +185,14 @@ electron_1.ipcMain.handle('data:write-file', async (_event, filePath, content) =
     try {
         let absolutePath = filePath;
         if (!path_1.default.isAbsolute(filePath)) {
-            absolutePath = path_1.default.resolve(PROJECT_ROOT, filePath);
+            if (filePath.startsWith('data/')) {
+                const relativePath = filePath.substring(5);
+                absolutePath = path_1.default.join(DATA_ROOT, relativePath);
+            }
+            else {
+                absolutePath = path_1.default.join(DATA_ROOT, filePath);
+            }
         }
-        // Ensure directory exists
         const dir = path_1.default.dirname(absolutePath);
         if (!fs_1.default.existsSync(dir)) {
             fs_1.default.mkdirSync(dir, { recursive: true });
@@ -209,10 +209,15 @@ electron_1.ipcMain.handle('data:list-directory', async (_event, dirPath) => {
     try {
         let absolutePath = dirPath;
         if (!path_1.default.isAbsolute(dirPath)) {
-            absolutePath = path_1.default.resolve(PROJECT_ROOT, dirPath);
+            if (dirPath.startsWith('data/')) {
+                absolutePath = path_1.default.join(DATA_ROOT, dirPath.substring(5));
+            }
+            else {
+                absolutePath = path_1.default.join(DATA_ROOT, dirPath);
+            }
         }
         if (!fs_1.default.existsSync(absolutePath)) {
-            return { success: true, files: [] }; // Return empty if dir doesn't exist yet
+            return { success: true, files: [] };
         }
         const files = fs_1.default.readdirSync(absolutePath).map(file => {
             const stats = fs_1.default.statSync(path_1.default.join(absolutePath, file));
