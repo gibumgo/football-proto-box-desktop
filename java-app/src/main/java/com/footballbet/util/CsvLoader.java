@@ -75,6 +75,7 @@ public class CsvLoader {
                 overseas,
                 ParseUtil.parseScore(dto.score),
                 Result.from(dto.result),
-                ParseUtil.parseDouble(dto.resultOdd));
+                ParseUtil.parseDouble(dto.resultOdd),
+                ParseUtil.parseDouble(dto.handicapValue));
     }
 }

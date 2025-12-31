@@ -51,4 +51,7 @@ public class MatchDto {
 
     @CsvBindByName(column = "결과 배당")
     public String resultOdd;
+
+    @CsvBindByName(column = "핸디캡")
+    public String handicapValue;
 }

@@ -21,11 +21,11 @@ public class Match {
     private final Optional<Double> resultOdd;
 
     // Mutable field for post-processing
-    private Double handicapNumber;
+    private final Double handicapNumber;
 
     public Match(int round, int matchNo, LocalDateTime dateTime, String league, String home, String away,
             MatchType type, BettingOdds domesticOdds, BettingOdds overseasOdds,
-            Score score, Result result, Double resultOdd) {
+            Score score, Result result, Double resultOdd, Double handicapNumber) {
         this.round = round;
         this.matchNo = matchNo;
         this.dateTime = dateTime;
@@ -38,6 +38,7 @@ public class Match {
         this.score = Optional.ofNullable(score);
         this.result = Optional.ofNullable(result);
         this.resultOdd = Optional.ofNullable(resultOdd);
+        this.handicapNumber = handicapNumber;
     }
 
     // Basic Getters
@@ -120,7 +121,4 @@ public class Match {
         return handicapNumber;
     }
 
-    public void setHandicapNumber(Double handicapNumber) {
-        this.handicapNumber = handicapNumber;
-    }
 }
