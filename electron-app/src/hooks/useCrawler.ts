@@ -104,6 +104,11 @@ export function useCrawler() {
         }
     }, []);
 
+    const resetProgress = useCallback(() => {
+        setProgress(0);
+        setLogs([]);  // Optional: clear logs too if "reset" implies full cleanup
+    }, []);
+
     return {
         isRunning,
         logs,
@@ -111,6 +116,7 @@ export function useCrawler() {
         outputDir,
         startCrawler,
         stopCrawler,
+        resetProgress, // Expose this
         updateOutputDir
     };
 }

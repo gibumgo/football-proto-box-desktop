@@ -3,14 +3,16 @@ import { NEON_THEME } from '../../domain/design/designTokens';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
-    error?: string;
+    error?: string | boolean;
     fullWidth?: boolean;
+    transparent?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({
     label,
     error,
     fullWidth = false,
+    transparent = false,
     style,
     ...props
 }) => {
@@ -36,8 +38,8 @@ export const Input: React.FC<InputProps> = ({
             <input
                 style={{
                     padding: '8px 12px',
-                    backgroundColor: NEON_THEME.colors.bg.app,
-                    border: `1px solid ${error ? NEON_THEME.colors.neon.red : NEON_THEME.colors.border.default}`,
+                    backgroundColor: transparent ? 'transparent' : NEON_THEME.colors.bg.app,
+                    border: transparent ? 'none' : `1px solid ${error ? NEON_THEME.colors.neon.red : NEON_THEME.colors.border.default}`,
                     borderRadius: NEON_THEME.layout.radius.sm,
                     color: NEON_THEME.colors.text.primary,
                     fontSize: NEON_THEME.typography.size.sm,

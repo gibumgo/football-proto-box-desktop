@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('api', {
         start: (options: any) => ipcRenderer.invoke('crawler:start', options),
         stop: () => ipcRenderer.invoke('crawler:stop'),
         status: () => ipcRenderer.invoke('crawler:status'),
+        discover: (type: string, param?: string) => ipcRenderer.invoke('crawler:discover', type, param),
         onMessage: (callback: (message: any) => void) => {
             const listener = (_event: any, message: any) => callback(message);
             ipcRenderer.on('crawler:message', listener);

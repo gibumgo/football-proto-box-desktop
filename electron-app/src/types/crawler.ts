@@ -20,13 +20,25 @@ export interface BetinfoOptions extends CommonOptions {
 
 export interface FlashscoreOptions extends CommonOptions {
     mode: 'flashscore';
-    task: 'metadata' | 'matches';
-    url: string;         // Required for metadata and matches
+    task: 'metadata' | 'matches' | 'discover' | 'integrated';
+    url?: string;         // Optional for discovery
+    country?: string;     // Discovery/Integrated
+    league?: string;      // Discovery/Integrated
     season?: string;
     fsStartRound?: number;
     fsEndRound?: number;
     checkpointInterval?: number;
     resume?: boolean;
+}
+
+export interface FlashscoreCountry {
+    name: string;
+    slug: string;
+}
+
+export interface FlashscoreLeague {
+    name: string;
+    slug: string;
 }
 
 export interface MappingOptions extends CommonOptions {

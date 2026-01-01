@@ -11,8 +11,6 @@ export function useFlashscoreForm(initialConfig: Partial<FlashscoreOptions>) {
     const handleUrlChange = useCallback((url: string) => {
         const updates: Partial<FlashscoreOptions> = { url };
 
-        // Smart Season Detection Logic
-        // Extracts year from URL like "...-2024-2025/..." -> "24-25"
         const seasonMatch = url.match(/-(\d{2})(\d{2})-(\d{2})(\d{2})\//);
         if (seasonMatch) {
             updates.season = `${seasonMatch[2]}-${seasonMatch[4]}`;
@@ -29,6 +27,14 @@ export function useFlashscoreForm(initialConfig: Partial<FlashscoreOptions>) {
         updateConfig({ season });
     }, [updateConfig]);
 
+    const handleCountryChange = useCallback((country: string) => {
+        updateConfig({ country, league: '' });
+    }, [updateConfig]);
+
+    const handleLeagueChange = useCallback((league: string) => {
+        updateConfig({ league });
+    }, [updateConfig]);
+
     const handleStartRoundChange = useCallback((round: number) => {
         updateConfig({ fsStartRound: round });
     }, [updateConfig]);
@@ -41,16 +47,24 @@ export function useFlashscoreForm(initialConfig: Partial<FlashscoreOptions>) {
         updateConfig({ resume });
     }, [updateConfig]);
 
+    const resetConfig = useCallback(() => {
+        setConfig(initialConfig);
+    }, [initialConfig]);
+
     return {
         config,
         updateConfig,
+        resetConfig,
         handlers: {
             handleUrlChange,
             handleTaskChange,
             handleSeasonChange,
+            handleCountryChange,
+            handleLeagueChange,
             handleStartRoundChange,
             handleEndRoundChange,
             handleResumeChange
         }
     };
 }
+

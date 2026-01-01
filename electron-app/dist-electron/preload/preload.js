@@ -7,6 +7,7 @@ electron_1.contextBridge.exposeInMainWorld('api', {
         start: (options) => electron_1.ipcRenderer.invoke('crawler:start', options),
         stop: () => electron_1.ipcRenderer.invoke('crawler:stop'),
         status: () => electron_1.ipcRenderer.invoke('crawler:status'),
+        discover: (type, param) => electron_1.ipcRenderer.invoke('crawler:discover', type, param),
         onMessage: (callback) => {
             const listener = (_event, message) => callback(message);
             electron_1.ipcRenderer.on('crawler:message', listener);

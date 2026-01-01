@@ -1,15 +1,32 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { NEON_THEME } from '../../domain/design/designTokens';
 import { useLeagueMapping } from '@/hooks/crawler/useLeagueMapping';
 import { useTeamMapping } from '@/hooks/crawler/useTeamMapping';
 import type { MasterTeamMappingItem } from '@/hooks/crawler/useTeamMapping';
 
-export function DataManagementPanel() {
+interface DataManagementPanelProps {
+    isRunning?: boolean;
+}
+
+export function DataManagementPanel({ isRunning }: DataManagementPanelProps) {
     const leagueData = useLeagueMapping();
     const teamData = useTeamMapping();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState<'leagues' | 'teams'>('leagues');
+    const [isCompact, setIsCompact] = useState(false);
+
+    // [Auto-Reload] Trigger reload when isRunning transitions from true -> false
+    const prevIsRunning = useRef(isRunning);
+
+    useEffect(() => {
+        if (prevIsRunning.current && !isRunning) {
+            console.log('Task finished, reloading data...');
+            leagueData.reload();
+            teamData.reload();
+        }
+        prevIsRunning.current = isRunning;
+    }, [isRunning, leagueData, teamData]);
 
     const [selectedLeagueId, setSelectedLeagueId] = useState<string>('');
     const [addingToId, setAddingToId] = useState<string | null>(null);
@@ -47,7 +64,9 @@ export function DataManagementPanel() {
                 const lower = searchTerm.toLowerCase();
                 items = items.filter(m =>
                     m.name.toLowerCase().includes(lower) ||
-                    m.aliases.some(alias => alias.toLowerCase().includes(lower))
+                    (m.nameKo && m.nameKo.toLowerCase().includes(lower)) ||
+                    m.aliases.some(alias => alias.toLowerCase().includes(lower)) ||
+                    m.id.toLowerCase().includes(lower)
                 );
             }
             return items;
@@ -60,7 +79,8 @@ export function DataManagementPanel() {
                 items = items.filter(m =>
                     m.name.toLowerCase().includes(lower) ||
                     (m.nameKo && m.nameKo.toLowerCase().includes(lower)) ||
-                    m.aliases.some(alias => alias.toLowerCase().includes(lower))
+                    m.aliases.some(alias => alias.toLowerCase().includes(lower)) ||
+                    m.id.toLowerCase().includes(lower)
                 );
             }
             return items;
@@ -68,9 +88,11 @@ export function DataManagementPanel() {
     }, [activeTab, leagueData.mappings, teamData.getTeamsByLeague, selectedLeagueId, searchTerm]);
 
     const stats = useMemo(() => {
-        const totalMasters = tableItems.length;
+        const total = tableItems.length;
+        const mapped = tableItems.filter(item => item.aliases.length > 0).length;
         const totalAliases = tableItems.reduce((acc, curr) => acc + curr.aliases.length, 0);
-        return { totalMasters, totalAliases };
+        const percent = total > 0 ? Math.round((mapped / total) * 100) : 0;
+        return { total, mapped, totalAliases, percent };
     }, [tableItems]);
 
     if (isLoading && tableItems.length === 0 && !selectedLeagueId) {
@@ -96,10 +118,28 @@ export function DataManagementPanel() {
             borderRadius: '16px',
             border: `1px solid ${NEON_THEME.colors.border.default}`,
             overflow: 'hidden',
-            height: '100%'
+            height: '100%',
+            position: 'relative'
         }}>
+            {/* 1. Status Summary Bar */}
             <div style={{
-                padding: '16px 24px',
+                height: '4px',
+                width: '100%',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                display: 'flex'
+            }}>
+                <div style={{
+                    width: `${stats.percent}%`,
+                    height: '100%',
+                    backgroundColor: NEON_THEME.colors.neon.green,
+                    boxShadow: `0 0 10px ${NEON_THEME.colors.neon.green}44`,
+                    transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+                }} />
+            </div>
+
+            {/* 2. Top Navigation & Stats */}
+            <div style={{
+                padding: '12px 24px',
                 borderBottom: `1px solid ${NEON_THEME.colors.border.subtle}`,
                 backgroundColor: 'rgba(0,0,0,0.2)',
                 display: 'flex',
@@ -119,13 +159,34 @@ export function DataManagementPanel() {
                             label="Teams"
                         />
                     </div>
-                    <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: NEON_THEME.colors.text.muted }}>
-                        <span>Count: <b style={{ color: '#fff' }}>{stats.totalMasters}</b></span>
-                        <span>Aliases: <b style={{ color: NEON_THEME.colors.neon.cyan }}>{stats.totalAliases}</b></span>
+                    <div style={{ display: 'flex', gap: '16px', fontSize: '11px', color: NEON_THEME.colors.text.muted, fontWeight: 700 }}>
+                        <span>TOTAL <b style={{ color: '#fff', marginLeft: '4px' }}>{stats.total}</b></span>
+                        <span>MAPPED <b style={{ color: NEON_THEME.colors.neon.green, marginLeft: '4px' }}>{stats.percent}%</b></span>
                     </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    {/* Zen Mode Toggle */}
+                    <button
+                        onClick={() => setIsCompact(!isCompact)}
+                        style={{
+                            backgroundColor: isCompact ? NEON_THEME.colors.neon.cyan : 'rgba(255,255,255,0.05)',
+                            border: `1px solid ${isCompact ? NEON_THEME.colors.neon.cyan : NEON_THEME.colors.border.subtle}`,
+                            borderRadius: '4px',
+                            width: '32px',
+                            height: '32px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: isCompact ? NEON_THEME.colors.bg.app : NEON_THEME.colors.text.muted,
+                            transition: 'all 0.2s'
+                        }}
+                        title="Focus Mode (Compact View)"
+                    >
+                        {isCompact ? '🧘' : '👁️'}
+                    </button>
+
                     {activeTab === 'teams' && (
                         <select
                             value={selectedLeagueId}
@@ -137,49 +198,60 @@ export function DataManagementPanel() {
                                 padding: '6px 12px',
                                 color: '#fff',
                                 fontSize: '12px',
-                                maxWidth: '200px',
+                                maxWidth: '180px',
                                 cursor: 'pointer'
                             }}
                         >
-                            <option value="">Select a League...</option>
+                            <option value="">Select League...</option>
                             {leagueData.mappings.map(lm => (
-                                <option key={lm.id} value={lm.id}>{lm.name}</option>
+                                <option key={lm.id} value={lm.id}>{lm.nameKo || lm.name}</option>
                             ))}
                         </select>
                     )}
 
-                    <input
-                        type="text"
-                        placeholder={activeTab === 'leagues' ? "Search Leagues..." : "Search Teams..."}
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        style={{
-                            background: 'rgba(255,255,255,0.05)',
-                            border: `1px solid ${NEON_THEME.colors.border.subtle}`,
-                            borderRadius: '6px',
-                            padding: '6px 12px',
-                            color: '#fff',
-                            fontSize: '12px',
-                            minWidth: '200px'
-                        }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                        <input
+                            type="text"
+                            placeholder="Quick Filter..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            style={{
+                                background: 'rgba(255,255,255,0.05)',
+                                border: `1px solid ${NEON_THEME.colors.border.subtle}`,
+                                borderRadius: '6px',
+                                padding: '6px 12px',
+                                color: '#fff',
+                                fontSize: '12px',
+                                minWidth: '180px'
+                            }}
+                        />
+                        {searchTerm && <span onClick={() => setSearchTerm('')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', opacity: 0.5 }}>✕</span>}
+                    </div>
                 </div>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead style={{ position: 'sticky', top: 0, backgroundColor: '#0a0a0a', zIndex: 1 }}>
+            {/* 3. Data Table */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: isCompact ? '12px' : '13px' }}>
+                    <thead style={{ position: 'sticky', top: 0, backgroundColor: NEON_THEME.colors.bg.panel, zIndex: 1 }}>
                         <tr>
-                            <th style={{ ...tableHeaderStyle, width: '40%' }}>
-                                {activeTab === 'leagues' ? 'OFFICIAL LEAGUE NAME' : 'OFFICIAL TEAM NAME'}
+                            <th style={{ ...tableHeaderStyle, width: '40%', padding: isCompact ? '8px 24px' : '12px 24px' }}>
+                                {activeTab === 'leagues' ? 'OFFICIAL LEAGUE' : 'OFFICIAL TEAM'}
                             </th>
-                            <th style={tableHeaderStyle}>MAPPED ALIASES</th>
+                            <th style={{ ...tableHeaderStyle, padding: isCompact ? '8px 24px' : '12px 24px' }}>MAPPED ALIASES</th>
                         </tr>
                     </thead>
                     <tbody>
                         {tableItems.map((item, idx) => {
                             const isAdding = addingToId === item.id;
-                            const rowBg = idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+                            const isMapped = item.aliases.length > 0;
+
+                            // State-based Zebra Striping
+                            const rowBg = !isMapped
+                                ? 'rgba(248, 113, 113, 0.03)' // Subtle red for unmapped
+                                : idx % 2 === 0
+                                    ? 'rgba(255,255,255,0.01)'
+                                    : 'transparent';
 
                             let nameDisplay = item.name;
                             let subText = `ID: ${item.id}`;
@@ -188,74 +260,87 @@ export function DataManagementPanel() {
 
                             if (activeTab === 'teams') {
                                 const teamItem = item as MasterTeamMappingItem;
-                                if (teamItem.nameKo) {
-                                    nameDisplay = `${item.name} (${teamItem.nameKo})`;
-                                }
+                                if (teamItem.nameKo) nameDisplay = `${item.name} (${teamItem.nameKo})`;
                                 if (teamItem.imageUrl) flagUrl = teamItem.imageUrl;
                             } else {
                                 const leagueItem = item as any;
                                 if (leagueItem.nameKo) {
                                     nameDisplay = leagueItem.nameKo;
-                                    subText = `${item.name} • ID: ${item.id}`;
+                                    subText = `${item.name} • ${item.id}`;
                                 }
                                 if (leagueItem.nationFlagUrl) flagUrl = leagueItem.nationFlagUrl;
                                 if (leagueItem.logoUrl) logoUrl = leagueItem.logoUrl;
                             }
 
                             return (
-                                <tr key={item.id} style={{ backgroundColor: rowBg, borderBottom: `1px solid rgba(255,255,255,0.03)` }}>
-                                    <td style={{ padding: '12px 24px', verticalAlign: 'middle' }}>
+                                <tr key={item.id} style={{
+                                    backgroundColor: rowBg,
+                                    borderBottom: `1px solid rgba(255,255,255,0.03)`,
+                                    transition: 'background-color 0.2s'
+                                }}>
+                                    <td style={{ padding: isCompact ? '8px 24px' : '12px 24px', verticalAlign: 'middle' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            {activeTab === 'leagues' && logoUrl && (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', minWidth: '24px' }}>
-                                                    <img src={logoUrl} alt="logo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
-                                                </div>
+                                            {!isCompact && (
+                                                <div style={{ width: '4px', height: '24px', backgroundColor: isMapped ? NEON_THEME.colors.neon.green : NEON_THEME.colors.status.error, borderRadius: '2px' }} />
+                                            )}
+                                            {activeTab === 'leagues' && logoUrl && !isCompact && (
+                                                <img src={logoUrl} alt="logo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
                                             )}
 
-                                            <div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                     {flagUrl && (
-                                                        <img src={flagUrl} alt="flag" style={{ width: '20px', height: 'auto', borderRadius: '2px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+                                                        <img src={flagUrl} alt="flag" style={{ width: '18px', height: 'auto', borderRadius: '2px' }} />
                                                     )}
-                                                    <div style={{ color: NEON_THEME.colors.text.primary, fontWeight: 600, fontSize: '14px' }}>
+                                                    <div style={{
+                                                        color: isMapped ? NEON_THEME.colors.text.primary : NEON_THEME.colors.neon.red,
+                                                        fontWeight: 600,
+                                                        fontSize: isCompact ? '13px' : '14px',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis'
+                                                    }}>
                                                         {nameDisplay}
                                                     </div>
                                                 </div>
-                                                <div style={{ color: NEON_THEME.colors.text.muted, fontSize: '11px', marginTop: '4px', fontFamily: NEON_THEME.typography.fontFamily.mono }}>
-                                                    {subText}
-                                                </div>
+                                                {!isCompact && (
+                                                    <div style={{ color: NEON_THEME.colors.text.muted, fontSize: '11px', marginTop: '2px', fontFamily: NEON_THEME.typography.fontFamily.mono }}>
+                                                        {subText}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </td>
 
-                                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                                    <td style={{ padding: isCompact ? '8px 24px' : '16px 24px', verticalAlign: 'top' }}>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: isCompact ? '4px' : '8px', alignItems: 'center' }}>
                                             {item.aliases.map(alias => (
                                                 <div key={alias} style={{
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     gap: '6px',
-                                                    backgroundColor: 'rgba(0, 255, 157, 0.1)',
-                                                    border: `1px solid ${NEON_THEME.colors.neon.green}`,
+                                                    backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                                                    border: `1px solid ${NEON_THEME.colors.neon.cyan}`,
                                                     borderRadius: '20px',
-                                                    padding: '4px 10px',
-                                                    fontSize: '12px',
-                                                    color: NEON_THEME.colors.neon.green
+                                                    padding: isCompact ? '2px 8px' : '4px 10px',
+                                                    fontSize: '11px',
+                                                    color: NEON_THEME.colors.neon.cyan,
+                                                    animation: 'fadeIn 0.3s ease'
                                                 }}>
                                                     <span>{alias}</span>
                                                     <span
                                                         onClick={() => handleRemove(alias)}
-                                                        style={{ cursor: 'pointer', opacity: 0.6, fontWeight: 'bold' }}
+                                                        style={{ cursor: 'pointer', opacity: 0.6 }}
                                                         onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
                                                         onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
                                                     >
-                                                        ×
+                                                        ✕
                                                     </span>
                                                 </div>
                                             ))}
 
                                             {isAdding ? (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', animation: 'fadeIn 0.2s' }}>
                                                     <input
                                                         autoFocus
                                                         type="text"
@@ -268,37 +353,33 @@ export function DataManagementPanel() {
                                                         }}
                                                         style={{
                                                             background: 'rgba(255,255,255,0.1)',
-                                                            border: '1px solid #fff',
+                                                            border: `1px solid ${NEON_THEME.colors.neon.cyan}`,
                                                             borderRadius: '4px',
-                                                            padding: '4px 8px',
+                                                            padding: '2px 8px',
                                                             color: '#fff',
-                                                            fontSize: '12px',
-                                                            width: '120px'
+                                                            fontSize: '11px',
+                                                            width: '100px',
+                                                            outline: 'none'
                                                         }}
                                                     />
-                                                    <button onClick={() => handleAddSubmit(item.id)} style={{ cursor: 'pointer', background: 'none', border: 'none', color: '#fff' }}>OK</button>
-                                                    <button onClick={() => { setAddingToId(null); setNewAliasInput(''); }} style={{ cursor: 'pointer', background: 'none', border: 'none', color: '#888' }}>X</button>
                                                 </div>
                                             ) : (
                                                 <div
                                                     onClick={() => { setAddingToId(item.id); setNewAliasInput(''); }}
                                                     style={{
                                                         cursor: 'pointer',
-                                                        padding: '4px 10px',
+                                                        padding: isCompact ? '2px 8px' : '4px 10px',
                                                         borderRadius: '20px',
                                                         border: `1px dashed ${NEON_THEME.colors.text.muted}`,
                                                         color: NEON_THEME.colors.text.muted,
                                                         fontSize: '11px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '4px',
                                                         opacity: 0.7,
                                                         transition: 'all 0.2s'
                                                     }}
-                                                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.borderColor = '#fff'; e.currentTarget.style.color = '#fff'; }}
-                                                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.borderColor = NEON_THEME.colors.text.muted; e.currentTarget.style.color = NEON_THEME.colors.text.muted; }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = NEON_THEME.colors.neon.cyan; e.currentTarget.style.color = NEON_THEME.colors.neon.cyan; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = NEON_THEME.colors.text.muted; e.currentTarget.style.color = NEON_THEME.colors.text.muted; }}
                                                 >
-                                                    + Add Alias
+                                                    + Add
                                                 </div>
                                             )}
                                         </div>
@@ -306,18 +387,15 @@ export function DataManagementPanel() {
                                 </tr>
                             );
                         })}
-                        {tableItems.length === 0 && (
-                            <tr>
-                                <td colSpan={2} style={{ padding: '40px', textAlign: 'center', color: NEON_THEME.colors.text.muted }}>
-                                    {activeTab === 'teams' && !selectedLeagueId
-                                        ? "Please select a league to manage teams."
-                                        : "No mappings found."}
-                                </td>
-                            </tr>
-                        )}
                     </tbody>
                 </table>
             </div>
+
+            <style>
+                {`
+                @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+                `}
+            </style>
         </div>
     );
 }
@@ -326,14 +404,17 @@ const TabButton = ({ active, label, onClick, disabled }: any) => (
     <div
         onClick={!disabled ? onClick : undefined}
         style={{
-            padding: '8px 16px',
+            padding: '8px 4px',
+            marginRight: '16px',
             cursor: disabled ? 'not-allowed' : 'pointer',
             opacity: disabled ? 0.3 : 1,
             color: active ? NEON_THEME.colors.neon.cyan : NEON_THEME.colors.text.muted,
             borderBottom: active ? `2px solid ${NEON_THEME.colors.neon.cyan}` : '2px solid transparent',
-            fontWeight: active ? 600 : 400,
+            fontWeight: active ? 700 : 400,
             transition: 'all 0.2s',
-            fontSize: '13px'
+            fontSize: '12px',
+            textTransform: 'uppercase',
+            letterSpacing: '1px'
         }}
     >
         {label}
@@ -341,10 +422,12 @@ const TabButton = ({ active, label, onClick, disabled }: any) => (
 );
 
 const tableHeaderStyle = {
-    padding: '12px 16px',
+    padding: '12px 24px',
     textAlign: 'left' as const,
     color: NEON_THEME.colors.text.muted,
-    fontSize: '11px',
-    fontWeight: 600,
-    letterSpacing: '0.5px'
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '1.5px',
+    textTransform: 'uppercase' as const,
+    borderBottom: `1px solid ${NEON_THEME.colors.border.subtle}`
 };

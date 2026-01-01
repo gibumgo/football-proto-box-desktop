@@ -1,16 +1,18 @@
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 
-import type { CrawlerOptions, BetinfoOptions, FlashscoreOptions, CrawlerMessage as IPCMessage } from '../types/crawler';
+import type { CrawlerOptions, BetinfoOptions, FlashscoreOptions, MappingOptions, CrawlerMessage as IPCMessage } from '../types/crawler';
 
 export class PythonRunner {
     private process: ChildProcess | null = null;
     private pythonPath: string;
     private mainScriptPath: string;
     private dataRoot: string;
+    private stdoutBuffer: string = '';
 
     constructor() {
-        this.pythonPath = 'python3';
+        // [FIX] Use absolute path to ensure correct environment
+        this.pythonPath = '/opt/homebrew/bin/python3';
         this.mainScriptPath = path.resolve(__dirname, '../../../python-crawler/main.py');
 
         const PROJECT_ROOT = path.resolve(__dirname, '../../../');
@@ -27,6 +29,7 @@ export class PythonRunner {
             throw new Error('Crawler process is already running');
         }
 
+        this.stdoutBuffer = '';
         const args = this.buildCommandArgs(options);
 
         console.log('[PythonRunner] Starting:', this.pythonPath, args.join(' '));
@@ -37,8 +40,18 @@ export class PythonRunner {
         });
 
         this.process.stdout?.on('data', (chunk: Buffer) => {
-            const output = chunk.toString();
-            this.parseIPCMessages(output, onMessage);
+            this.stdoutBuffer += chunk.toString();
+
+            // Process complete lines only
+            let newlineIndex;
+            while ((newlineIndex = this.stdoutBuffer.indexOf('\n')) !== -1) {
+                const line = this.stdoutBuffer.substring(0, newlineIndex);
+                this.stdoutBuffer = this.stdoutBuffer.substring(newlineIndex + 1);
+
+                if (line.trim()) {
+                    this.parseIPCLine(line, onMessage);
+                }
+            }
         });
 
         this.process.stderr?.on('data', (chunk: Buffer) => {
@@ -56,6 +69,12 @@ export class PythonRunner {
 
         this.process.on('close', (code) => {
             console.log('[PythonRunner] Process exited with code:', code);
+
+            // Process any remaining buffer content
+            if (this.stdoutBuffer.trim()) {
+                this.parseIPCLine(this.stdoutBuffer, onMessage);
+            }
+
             this.process = null;
             onComplete(code || 0);
         });
@@ -113,6 +132,9 @@ export class PythonRunner {
             const opts = options as FlashscoreOptions;
             args.push('--task', opts.task);
 
+            if (opts.country) args.push('--country', opts.country);
+            if (opts.league) args.push('--league', opts.league);
+
             if (opts.url) args.push('--url', opts.url);
             if (opts.season) args.push('--season', opts.season);
             if (opts.resume) args.push('--resume');
@@ -120,58 +142,87 @@ export class PythonRunner {
             if (opts.fsStartRound) args.push('--fs-start-round', opts.fsStartRound.toString());
             if (opts.fsEndRound) args.push('--fs-end-round', opts.fsEndRound.toString());
         }
+        else if (options.mode === 'mapping') {
+            const opts = options as MappingOptions;
+            args.push('--task', opts.task);
+        }
 
         return args;
     }
 
-    private parseIPCMessages(output: string, onMessage: (message: IPCMessage) => void): void {
-        const lines = output.split('\n');
+    private parseIPCLine(line: string, onMessage: (message: IPCMessage) => void): void {
+        if (!line.trim()) return;
 
-        for (const line of lines) {
-            if (!line.trim()) continue;
+        // [FIX] Matched against actual Python output formats: 'DATA:', 'STATUS:', etc.
+        // Removed 'IPC_' prefix to match python output
 
-            if (line.startsWith('IPC_STATUS:')) {
-                const content = line.substring('IPC_STATUS:'.length);
-                const [statusType, value] = content.split('|');
-                onMessage({
-                    type: 'STATUS',
-                    payload: { statusType, value }
-                });
-            }
-            else if (line.startsWith('IPC_PROGRESS:')) {
-                const percent = parseFloat(line.substring('IPC_PROGRESS:'.length));
-                onMessage({
-                    type: 'PROGRESS',
-                    payload: { percent }
-                });
-            }
-            else if (line.startsWith('IPC_DATA:')) {
-                try {
-                    const jsonString = line.substring('IPC_DATA:'.length);
+        if (line.startsWith('STATUS:')) {
+            const content = line.substring('STATUS:'.length);
+            const [statusType, value] = content.split('|');
+            onMessage({
+                type: 'STATUS',
+                payload: { statusType, value }
+            });
+        }
+        else if (line.startsWith('PROGRESS:')) {
+            const percent = parseFloat(line.substring('PROGRESS:'.length));
+            onMessage({
+                type: 'PROGRESS',
+                payload: { percent }
+            });
+        }
+        else if (line.startsWith('DATA:')) {
+            try {
+                const content = line.substring('DATA:'.length);
+                const separatorIndex = content.indexOf('|');
+
+                if (separatorIndex !== -1) {
+                    const key = content.substring(0, separatorIndex);
+                    const jsonString = content.substring(separatorIndex + 1);
                     const data = JSON.parse(jsonString);
+
+                    onMessage({
+                        type: 'DATA',
+                        payload: { [key]: data }
+                    });
+                } else {
+                    const data = JSON.parse(content);
                     onMessage({
                         type: 'DATA',
                         payload: data
                     });
-                } catch (e) {
-                    console.error('[PythonRunner] Failed to parse DATA message:', e);
                 }
+            } catch (e) {
+                console.error('[PythonRunner] Failed to parse DATA message:', e);
             }
-            else if (line.startsWith('IPC_CHECKPOINT:')) {
-                const checkpointId = line.substring('IPC_CHECKPOINT:'.length);
-                onMessage({
-                    type: 'CHECKPOINT',
-                    payload: { checkpointId }
-                });
-            }
-            else if (line.startsWith('IPC_ERROR:')) {
-                const content = line.substring('IPC_ERROR:'.length);
-                const [code, message] = content.split('|');
-                onMessage({
-                    type: 'ERROR',
-                    payload: { code: parseInt(code), message }
-                });
-            }
+        }
+        else if (line.startsWith('CHECKPOINT:')) {
+            const checkpointId = line.substring('CHECKPOINT:'.length);
+            onMessage({
+                type: 'CHECKPOINT',
+                payload: { checkpointId }
+            });
+        }
+        else if (line.startsWith('ERROR:')) {
+            const content = line.substring('ERROR:'.length);
+            const [code, message] = content.split('|');
+            onMessage({
+                type: 'ERROR',
+                payload: { code: parseInt(code), message }
+            });
+        }
+        // Fallback for legacy format with IPC_ prefix, just in case
+        else if (line.startsWith('IPC_DATA:')) {
+            try {
+                const content = line.substring('IPC_DATA:'.length);
+                const separatorIndex = content.indexOf('|');
+                if (separatorIndex !== -1) {
+                    const key = content.substring(0, separatorIndex);
+                    const jsonString = content.substring(separatorIndex + 1);
+                    const data = JSON.parse(jsonString);
+                    onMessage({ type: 'DATA', payload: { [key]: data } });
+                }
+            } catch (e) { }
         }
     }
 }

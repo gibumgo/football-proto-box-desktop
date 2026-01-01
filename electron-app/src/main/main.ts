@@ -184,6 +184,68 @@ ipcMain.handle('crawler:status', async () => {
     return { isRunning };
 });
 
+ipcMain.handle('crawler:discover', async (_event: IpcMainInvokeEvent, type: 'countries' | 'leagues', param?: string) => {
+    // Discovery는 독립적인 단기 프로세스로 실행하거나, 기존 러너가 없으면 실행
+    // 여기서는 독립적인 러너 인스턴스를 생성해서 실행 후 종료하는 것이 안전
+    const discoveryRunner = new PythonRunner();
+
+    // 타임아웃 30초
+    const timeoutPromise = new Promise<{ success: boolean; error?: any }>((_, reject) => {
+        setTimeout(() => reject(new Error('Discovery timed out')), 30000);
+    });
+
+    const executionPromise = new Promise<{ success: boolean; data?: any; error?: any }>((resolve, reject) => {
+        let resultData: any = null;
+        let errors: string[] = [];
+
+        const options: any = {
+            mode: 'flashscore',
+            task: 'discover',
+            country: type === 'leagues' ? param : undefined,
+            headless: true, // 디스커버리는 헤드리스로
+            debug: false
+        };
+
+        discoveryRunner.start(
+            options,
+            (message: any) => {
+                if (message.type === 'DATA') {
+                    // KEY|JSON 포맷이 이미 pythonRunner에서 { key: data }로 파싱됨
+                    // COUNTRIES 또는 LEAGUES 키를 찾아서 할당
+                    if (message.payload.COUNTRIES) {
+                        resultData = message.payload.COUNTRIES;
+                    } else if (message.payload.LEAGUES) {
+                        resultData = message.payload.LEAGUES;
+                    }
+                } else if (message.type === 'ERROR') {
+                    errors.push(message.payload.message);
+                }
+            },
+            (exitCode) => {
+                if (exitCode === 0 && resultData) {
+                    resolve({ success: true, data: resultData });
+                } else {
+                    reject(new Error(errors.length > 0 ? errors.join(', ') : `Discovery failed with exit code ${exitCode}`));
+                }
+            },
+            (error) => {
+                reject(error);
+            }
+        );
+    });
+
+    try {
+        const result = await Promise.race([executionPromise, timeoutPromise]);
+        return result;
+    } catch (e: any) {
+        // 타임아웃이나 에러 시 프로세스 강제 종료
+        if (discoveryRunner.isRunning()) {
+            discoveryRunner.stop();
+        }
+        return { success: false, error: e.message || e };
+    }
+});
+
 ipcMain.on('open-url', (_event: any, url: string) => {
     shell.openExternal(url);
 });

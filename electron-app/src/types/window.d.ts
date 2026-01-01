@@ -8,6 +8,7 @@ declare global {
                 start: (options: BetinfoOptions | FlashscoreOptions | MappingOptions) => Promise<{ success: boolean }>;
                 stop: () => Promise<{ success: boolean }>;
                 status: () => Promise<{ isRunning: boolean }>;
+                discover: (type: 'countries' | 'leagues', param?: string) => Promise<{ success: boolean; data?: any; error?: any }>;
                 onMessage: (callback: (message: CrawlerMessage) => void) => () => void;
             };
             openExternal: (url: string) => void;
